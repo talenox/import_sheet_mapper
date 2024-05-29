@@ -1,9 +1,6 @@
 from openai import OpenAI
 from dotenv import load_dotenv
 import os
-import pandas as pd
-import csv
-from datetime import datetime
 from llm_mapper.openai import OpenAiMapper
 from file_processor.file_processor import *
 from static_data_generator.tlx_column_header_mapper import *
@@ -53,7 +50,8 @@ def get_user_choice():
 if __name__ == "__main__":
   display_menu()
   user_choice = get_user_choice()
-  print(latest_version_contents(country=user_choice))
-  # prompt = "Summarize the following CSV headers: name, age, email."
-  # summary = llm_model.get_response(prompt)
-  # print(summary)
+  country_specific_tlx_import_sheet_headers = get_column_headers(country=user_choice)
+  raw_data_headers = "name, birthdate, address"
+  prompt = llm_model.create_mapping_prompt(raw_data_headers, country_specific_tlx_import_sheet_headers)
+  response = llm_model.get_response(prompt)
+  print(response)

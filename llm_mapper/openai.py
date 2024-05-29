@@ -1,3 +1,4 @@
+import os
 class OpenAiMapper:
   def __init__(self, client):
     self.client = client
@@ -10,13 +11,20 @@ class OpenAiMapper:
     return summary_prompt
   
   # This method creates a prompt to summarise the column headers of a csv file
-  def create_mapping_prompt(self, raw_data_headers, tlx_import_sheet_headers):
-    summary_prompt = "The input file contains the following columns:\n"
-    summary_prompt += ", ".join(raw_data_headers) + "\n\n"
-    summary_prompt += "Please provide a mapping of these columns to the following fixed columns:\n"
-    summary_prompt += ", ".join(tlx_import_sheet_headers) + "\n\n"
-    summary_prompt += "Note: Columns in the input file can be mapped to zero or more fixed columns and vice versa."
-    return summary_prompt
+  def create_mapping_prompt(self, raw_data_headers, tlx_import_sheet_headers, prompt_file='base_prompt.txt'):
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    directory_path = os.path.join(script_dir, f'../sample_prompts/{prompt_file}')
+    # Open the file and read its content
+    with open(directory_path, 'r') as file:
+      prompt_text = file.read()
+    
+    prompt_text += f"""
+      Here are the columns for you to map:
+
+      User-provided column headers: {raw_data_headers}
+      Fixed column headers: {tlx_import_sheet_headers}
+    """
+    return prompt_text
 
   # This method returns the output of the LLM
   def get_response(self, prompt):
