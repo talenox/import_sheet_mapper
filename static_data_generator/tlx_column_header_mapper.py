@@ -1,3 +1,5 @@
+import os
+
 # We maintain a list of column headers for each country supported by our import sheet
 SINGAPORE_COLUMN_HEADERS = [
  "Employee ID",
@@ -486,17 +488,17 @@ INDONESIA_COLUMN_HEADERS = [
 
 # Write all the header columns to a csv file
 FILE_NAME_MAPPING_DICT = {
-    "singapore": SINGAPORE_COLUMN_HEADERS,
-    "hong_kong": HONG_KONG_COLUMN_HEADERS,
-    "malaysia": MALAYSIA_COLUMN_HEADERS,
-    "global": GLOBAL_COLUMN_HEADERS,
-    "indonesia": INDONESIA_COLUMN_HEADERS
+  "singapore": SINGAPORE_COLUMN_HEADERS,
+  "hong_kong": HONG_KONG_COLUMN_HEADERS,
+  "malaysia": MALAYSIA_COLUMN_HEADERS,
+  "global": GLOBAL_COLUMN_HEADERS,
+  "indonesia": INDONESIA_COLUMN_HEADERS
 }
 
 # This method generates new csv files containing header columns as a way of versioning
 def update_column_headers(version):
   # Specify the folder path
-  folder_path = f"../column_headers/{version}"
+  folder_path = f"../tlx_column_headers/{version}"
 
   # Create the folder if it doesn't exist
   if not os.path.exists(folder_path):
@@ -508,3 +510,29 @@ def update_column_headers(version):
     with open(file_name, 'w', newline='') as csvfile:
       writer = csv.writer(csvfile)
       writer.writerow(column_headers)
+
+def latest_version_contents(country="singapore"):
+  # Define the directory path
+  directory_path = "../tlx_column_headers"
+  # Get a list of directories (dates)
+  dates = [entry for entry in os.listdir(directory_path) if os.path.isdir(os.path.join(directory_path, entry))]
+  # Parse dates into datetime objects
+  parsed_dates = [datetime.strptime(date, "%Y-%m-%d") for date in dates]
+  # Identify the latest date
+  latest_date = max(parsed_dates)
+  # Find the directory corresponding to the latest date
+  latest_directory = latest_date.strftime("%Y-%m-%d")
+
+  # Access the contents of the latest directory
+  latest_contents_path = os.path.join(directory_path, latest_directory)
+
+  # Define the path to the target CSV file
+  target_file = os.path.join(latest_contents_path, f"{country}.csv")
+
+  # Check if the target file exists and print its contents
+  if os.path.isfile(target_file):
+    with open(target_file, 'r') as file:
+      file_contents = file.read()
+      return(file_contents)
+  else:
+    return(f"{country}.csv not found in {latest_contents_path}")
