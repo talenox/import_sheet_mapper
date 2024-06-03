@@ -1,5 +1,7 @@
+from pandas import pd
+
 # Read the Excel file and sample rows of data
-def sample_excel_file_data(file_path, sheet_name=0, max_rows=10):
+def read_excel_file_data(file_path, sheet_name=0, max_rows=10):
   # Read the entire Excel file
   df = pd.read_excel(file_path, sheet_name=sheet_name, skiprows=1)
   # Extract the header rows
