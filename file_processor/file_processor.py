@@ -1,7 +1,9 @@
+import pandas as pd
+
 # Read the Excel file and sample rows of data
-def sample_excel_file_data(file_path, sheet_name=0, max_rows=10):
+def read_excel_and_sample(filename, sheet_name=0, max_rows=10):
   # Read the entire Excel file
-  df = pd.read_excel(file_path, sheet_name=sheet_name, skiprows=1)
+  df = pd.read_excel(filename, sheet_name=sheet_name, skiprows=2)
   # Extract the header rows
   headers = df.columns.tolist()
   # Sample a maximum of 10 rows
@@ -12,9 +14,9 @@ def sample_excel_file_data(file_path, sheet_name=0, max_rows=10):
   return result_df
 
 # Read the Excel file and extract the header columns
-def extract_headers_from_excel_file(file_path, sheet_name=0):
+def extract_headers_from_excel_file(filename, sheet_name=0):
   # Read the entire Excel file
-  df = pd.read_excel(file_path, sheet_name=sheet_name, skiprows=1)
+  df = pd.read_excel(filename, sheet_name=sheet_name, skiprows=2)
   # Extract the header rows
   headers = df.columns.tolist()
   return headers
@@ -25,9 +27,9 @@ def write_to_excel(result_df, output_path='sampled_output.xlsx'):
     result_df.to_excel(writer, index=False, sheet_name='Sheet1')
 
 # Read CSV and sample rows of data
-def read_csv_sample(file_path, max_rows=10):
+def read_csv_and_sample(filename, max_rows=10):
   # Read the entire CSV file
-  df = pd.read_csv(file_path)
+  df = pd.read_csv(filename)
   # Extract the header rows
   headers = df.columns.tolist()
   # Sample a maximum of 10 rows
@@ -37,9 +39,9 @@ def read_csv_sample(file_path, max_rows=10):
   return result_df
 
 # Extract header columns from csv file
-def extract_headers_from_csv(file_path):
+def extract_headers_from_csv(filename):
   # Read the entire CSV file
-  df = pd.read_csv(file_path)
+  df = pd.read_csv(filename)
   # Extract the header rows
   headers = df.columns.tolist()
   return headers

@@ -6,9 +6,11 @@ Input:
 User-provided column headers: Full Name, Age, Email
 Fixed column headers: First Name, Last Name, Given Name, Birthdate, Email Address, Contact Number, Mailing Address
 
-Expected Output:
-- "Full Name" -> "First Name" (Exact match)
-- "Full Name" -> "Last Name" (Exact match)
-- "Full Name" -> "Given Name" (Exact match)
-- "Age" -> "Birthdate" (Suggestion)
-- "Email" -> "Email Address" (Exact match)
+Expected Output (in JSON format). Do not add on extra wording aside from the JSON object:
+{
+  "Full Name": "First Name",
+  "Full Name": "Last Name",
+  "Full Name": "Given Name",
+  "Age": "Birthdate",
+  "Email": "Email Address",
+}
