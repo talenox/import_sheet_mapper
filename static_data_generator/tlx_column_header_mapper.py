@@ -534,7 +534,7 @@ def get_column_headers(country="singapore"):
   # Check if the target file exists and print its contents
   if os.path.isfile(target_file):
     with open(target_file, 'r') as file:
-      file_contents = file.read()
+      file_contents = file.read().split(',')
       return(file_contents)
   else:
     return(f"{country}.csv not found in {latest_contents_path}")
