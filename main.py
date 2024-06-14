@@ -47,39 +47,39 @@ def app():
 
     if country:
       country_specific_tlx_import_sheet_headers = get_column_headers(country.lower().replace(" ", "_"))
-      # initial_mappings = generate_mappings(raw_data_headers, country_specific_tlx_import_sheet_headers)
-      initial_mappings = '''
-        {
-          "Employee ID": "Employee ID*",
-          "First Name": "First Name",
-          "Last Name": "Last Name",
-          "Nickname": "Nickname",
-          "Chinese Name": "Chinese Name",
-          "Email": "Email Address",
-          "Invite User": "Invite User*",
-          "User Email (if different from employee email)": "User Email (if different from employee email)",
-          "Access Role": "Access Role",
-          "My Profile Module": "My Profile Module",
-          "Payslip Module": "Payslip Module",
-          "Tax Module": "Tax Module",
-          "Leave Module": "Leave Module",
-          "Payroll Module": "Payroll Module",
-          "Profile Module": "Profile Module",
-          "Birth Date (DD/MM/YYYY)": "Birth Date (DD/MM/YYYY)",
-          "Gender": "Gender",
-          "Marital Status": "Marital Status",
-          "Identification Number": "Identification Number*",
-          "Immigration Status": "Immigration Status*",
-          "Contact Number": "Contact Number",
-          "Office Direct Inward Dialing (DID) Number": "Office Direct Inward Dialing (DID) Number",
-          "Address Line 1": "Address Line 1",
-          "Address Line 2": "Address Line 2",
-          "Country": "Country",
-          "Region": "Region",
-          "Subregion": "Subregion",
-          "Postal Code": "Postal Code"
-        }
-      '''
+      initial_mappings = generate_mappings(raw_data_headers, country_specific_tlx_import_sheet_headers)
+      # initial_mappings = '''
+      #   {
+      #     "Employee ID": "Employee ID*",
+      #     "First Name": "First Name",
+      #     "Last Name": "Last Name",
+      #     "Nickname": "Nickname",
+      #     "Chinese Name": "Chinese Name",
+      #     "Email": "Email Address",
+      #     "Invite User": "Invite User*",
+      #     "User Email (if different from employee email)": "User Email (if different from employee email)",
+      #     "Access Role": "Access Role",
+      #     "My Profile Module": "My Profile Module",
+      #     "Payslip Module": "Payslip Module",
+      #     "Tax Module": "Tax Module",
+      #     "Leave Module": "Leave Module",
+      #     "Payroll Module": "Payroll Module",
+      #     "Profile Module": "Profile Module",
+      #     "Birth Date (DD/MM/YYYY)": "Birth Date (DD/MM/YYYY)",
+      #     "Gender": "Gender",
+      #     "Marital Status": "Marital Status",
+      #     "Identification Number": "Identification Number*",
+      #     "Immigration Status": "Immigration Status*",
+      #     "Contact Number": "Contact Number",
+      #     "Office Direct Inward Dialing (DID) Number": "Office Direct Inward Dialing (DID) Number",
+      #     "Address Line 1": "Address Line 1",
+      #     "Address Line 2": "Address Line 2",
+      #     "Country": "Country",
+      #     "Region": "Region",
+      #     "Subregion": "Subregion",
+      #     "Postal Code": "Postal Code"
+      #   }
+      # '''
       initial_mappings_cleaned = initial_mappings.replace('\n', '')
       initial_mappings_json = json.loads(initial_mappings_cleaned)
 
@@ -87,6 +87,7 @@ def app():
 
       corrected_mappings = {}
       key = 0
+      country_specific_tlx_import_sheet_headers = [""] + country_specific_tlx_import_sheet_headers
       for user_header, initial_map in initial_mappings_json.items():
         # Set initial value to the index of initial_map if it exists, else default to 0
         initial_index = country_specific_tlx_import_sheet_headers.index(initial_map) if initial_map in country_specific_tlx_import_sheet_headers else 0
