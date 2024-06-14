@@ -58,15 +58,20 @@ def display_initial_mappings(initial_mappings_json, country_specific_tlx_import_
   return st.session_state.corrected_mappings
 
 def display_mapped_data(data, corrected_mappings, headers):
+  fixed_value_columns = get_column_dropdown_values().keys()
   # Initialize an empty DataFrame with the specified headers
   mapped_data = pd.DataFrame(columns=headers)
-  
+
   # Loop through mappings and populate the mapped_data DataFrame
   for source_col, target_col in corrected_mappings.items():
     # Only map if the source column exists in data and target column is in headers
     if source_col in data.columns and target_col in headers:
-      mapped_data[target_col] = data[source_col]
-    
+      if target_col.lower() in fixed_value_columns:
+        data_mappings = json.loads(generate_column_dropdown_value_mappings(llm_model, target_col.lower(), data[source_col].unique()))
+        # Replace the values in the user's sheet with what it was mapped to
+        mapped_data[target_col] = data[source_col].apply(lambda x: data_mappings.get(x, x) if data_mappings.get(x, x) else x)
+      else:
+        mapped_data[target_col] = data[source_col]
   # Ensure all required headers are present, fill missing with empty strings
   for header in headers:
     if header not in mapped_data.columns:
@@ -102,104 +107,12 @@ def app(llm_model):
 
     if st.session_state.confirmed_country:
       country_specific_tlx_import_sheet_headers = get_column_headers(st.session_state.confirmed_country.lower().replace(" ", "_"))
-      initial_mappings = generate_column_header_mappings(llm_model, raw_data_headers, country_specific_tlx_import_sheet_headers)
-      # initial_mappings = '''
-      #   {
-      #     "Employee ID": "Employee ID",
-      #     "First Name*": "First Name",
-      #     "Last Name*": "Last Name",
-      #     "Nickname": "Nickname",
-      #     "Chinese Name": "Chinese Name",
-      #     "Email": "Email",
-      #     "Invite User*": "Invite User",
-      #     "User Email (if different from employee email)": "User Email (if different from employee email)",
-      #     "Access Role": "Access Role",
-      #     "My Profile Module": "My Profile Module",
-      #     "Payslip Module": "Payslip Module",
-      #     "Tax Module": "Tax Module",
-      #     "Leave Module": "Leave Module",
-      #     "Payroll Module": "Payroll Module",
-      #     "Profile Module": "Profile Module",
-      #     "Birth Date (DD/MM/YYYY)*": "Birth Date (DD/MM/YYYY)",
-      #     "Gender": "Gender",
-      #     "Marital Status*": "Marital Status",
-      #     "Identification Number*": "Identification Number",
-      #     "Immigration Status*": "Immigration Status",
-      #     "Disabled Individual*": "Disabled Individual",
-      #     "Disabled Spouse*": "Disabled Spouse",
-      #     "Contributing EPF?*": "Contributing EPF?",
-      #     "EPF Number*": "EPF Number",
-      #     "Employee EPF Setting*": "Employee EPF Setting",
-      #     "Employer EPF Setting*": "Employer EPF Setting",
-      #     "PCB No.(Income tax no.)*": "PCB No(Income tax no)",
-      #     "PCB Borne by Employer*": "PCB Borne by Employer",
-      #     "Socso Category*": "Socso Category",
-      #     "Employment Insurance System(EIS)*": "Employment Insurance System(EIS)",
-      #     "Zakat No.": "Zakat No.",
-      #     "Zakat Amount": "Zakat Amount",
-      #     "Contributing HRDF?*": "Contributing HRDF?",
-      #     "Passport No": "Passport No.",
-      #     "Passport Date of Issue (DD/MM/YYYY)": "Passport Date of Issue (DD/MM/YYYY)",
-      #     "Passport Date of Expiry (DD/MM/YYYY)": "Passport Date of Expiry (DD/MM/YYYY)",
-      #     "Passport Place of Issue": "Passport Place of Issue",
-      #     "Nationality": "Nationality",
-      #     "Race": "Race",
-      #     "Religion": "Religion",
-      #     "Job Title*": "Job Title",
-      #     "Hired Date (DD/MM/YYYY)*": "Hired Date (DD/MM/YYYY)",
-      #     "Job Start Date (DD/MM/YYYY)": "Job Start Date (DD/MM/YYYY)",
-      #     "Department": "Department",
-      #     "Location/Branch": "Location/Branch",
-      #     "Default Cost Centre": "Default Cost Centre",
-      #     "Role": "Role",
-      #     "Confirmation Date (DD/MM/YYYY)": "Confirmation Date (DD/MM/YYYY)",
-      #     "Working Day*": "Working Day",
-      #     "Working Hour*": "Working Hour",
-      #     "Rate of Pay*": "Rate of Pay",
-      #     "Currency of Salary*": "Currency of Salary",
-      #     "Basic Salary*": "Basic Salary",
-      #     "Designation in Accounting Software": "Designation in Accounting Software",
-      #     "Job Remarks": "Job Remarks",
-      #     "Resign Date (DD/MM/YYYY)": "Resign Date (DD/MM/YYYY)",
-      #     "Payment Method*": "Payment Method",
-      #     "Bank Type": "Bank Type",
-      #     "Bank Account Holders Name": "Bank Account Holder's Name",
-      #     "Bank Account No.": "Bank Account No.",
-      #     "Contact Number": "Contact Number",
-      #     "Office Direct Inward Dialing (DID) Number": "Office Direct Inward Dialing (DID) Number",
-      #     "Address Line 1": "Address Line 1",
-      #     "Address Line 2": "Address Line 2",
-      #     "Country": "Country",
-      #     "Region": "Region",
-      #     "Subregion": "Subregion",
-      #     "Postal Code": "Postal Code",
-      #     "Next of Kins Name": "Next of Kin's Name",
-      #     "Next of Kins Nationality": "Next of Kin's Nationality",
-      #     "Next of Kins Gender": "Next of Kin's Gender",
-      #     "Next of Kins Birth Date (DD/MM/YYYY)": "Next of Kin's Birth Date (DD/MM/YYYY)",
-      #     "Next of Kins Identification No.": "Next of Kin's Identification No.",
-      #     "Next of Kins Passport No.": "Next of Kin's Passport No.",
-      #     "Next of Kins Relationship": "Next of Kin's Relationship",
-      #     "Next of Kins Marriage Date (Spouse) (DD/MM/YYYY)": "Next of Kin's Marriage Date (Spouse) (DD/MM/YYYY)",
-      #     "Next of Kins Contact No.": "Next of Kin's Contact No.",
-      #     "Accumulated remuneration/Benefit-In-Kind (BIK)/Value Of Living Accomodation (VOLA)*": "Accumulated remuneration/Benefit-In-Kind (BIK)/Value Of Living Accomodation (VOLA)",
-      #     "Accumulated EPF and Other Approved Funds [include life premium insurance]*": "Accumulated EPF and Other Approved Funds [include life premium insurance]",
-      #     "Accumulated MTD paid (including MTD on additional remuneration)*": "Accumulated MTD paid (including MTD on additional remuneration)",
-      #     "Accumulated SOCSO Contribution*": "Accumulated SOCSO Contribution",
-      #     "Accumulated Zakat paid*": "Accumulated Zakat paid",
-      #     "Payroll year to start applying accumulated deductions.*": "Payroll year to start applying accumulated deductions.",
-      #     "Payroll month to start applying accumulated deductions.*": "Payroll month to start applying accumulated deductions.",
-      #     "Covid-19 Vaccination Status": "Covid-19 Vaccination Status",
-      #     "Covid-19 Vaccine Brand": "Covid-19 Vaccine Brand",
-      #     "Date of 1st Dose (DD/MM/YYYY)": "Date of 1st Dose (DD/MM/YYYY)",
-      #     "Date of 2nd Dose (DD/MM/YYYY)": "Date of 2nd Dose (DD/MM/YYYY)",
-      #     "Covid-19 Vaccine Booster Brand": "Covid-19 Vaccine Booster Brand",
-      #     "Date of Booster Dose (DD/MM/YYYY)": "Date of Booster Dose (DD/MM/YYYY)",
-      #     "Vaccination Remarks": "Vaccination Remarks"
-      #   }
-      # '''
+      # initial_mappings = generate_column_header_mappings(llm_model, raw_data_headers, country_specific_tlx_import_sheet_headers)
+      initial_mappings = '''
+        {  "EmployeeCode": "Employee ID",  "LastName": "Last Name",  "FirstName": "First Name",  "MiddleName": "Nickname (if different from employee first name)",  "EmployeeName": "Statutory Name",  "AliasName": "Chinese Name",  "Gender": "Gender",  "Title": "Job Title",  "NationalityCode": "Nationality",  "BirthDate": "Birth Date (DD/MM/YYYY)",  "BirthPlace": "Passport Place of Issue",  "RaceCode": "Race",  "ReligionCode": "Religion",  "MaritalStatus": "Marital Status",  "MarriageDate": "Marriage Date (Spouse) (DD/MM/YYYY)",  "Email": "Email",  "Funds": "Payment Method",  "MOMOccupationCode": "Role",  "MOMEmployeeType": "Working Day",  "MOMOccupationGroup": "Department",  "MOMCategory": "Location/Branch",  "WorkDaysPerWeek": "Working Day",  "WorkHoursPerDay": "Working Hour",  "WorkHoursPerYear": "Rate of Pay",  "BankAccountNo": "Bank Account No.",  "BankBranch": "Bank Branch No.",  "BankCode": "Bank Type",  "BankCurrencyCode": "Currency of Salary",  "CPFMethodCode": "CPF in lieu",  "CPFEmployeeType": "Rate of Pay",  "FWLCode": "Confirmation Date (DD/MM/YYYY)",  "SFC01": "Overwrite Jobs Array (Ignore current jobs columns)"}
+      '''
       initial_mappings_cleaned = initial_mappings.replace('\n', '')
-      print(initial_mappings_cleaned)      
+      # print(initial_mappings_cleaned)      
       initial_mappings_json = json.loads(initial_mappings_cleaned)
       st.write("Please review and correct the mappings:")
       corrected_mappings = display_initial_mappings(initial_mappings_json, country_specific_tlx_import_sheet_headers)
@@ -220,5 +133,4 @@ if __name__ == "__main__":
     api_key=api_key,
   )
   llm_model = OpenAiMapper(client)
-  print(generate_column_dropdown_value_mappings(llm_model, 'race', ['IBAN', 'CHI', 'Cauc', 'Bumiputera Sabah']))
-  # app(llm_model)
+  app(llm_model)
