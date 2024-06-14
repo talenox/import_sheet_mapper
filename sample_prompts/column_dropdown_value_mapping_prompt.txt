@@ -1,0 +1,32 @@
+
+Sure, here's a prompt you can use to instruct the Language Model (LLM) to perform the mapping based on user input values and a list of accepted values for a specific column:
+
+Prompt:
+
+You are tasked with mapping user input values to a predefined set of accepted values for a specific column in a dataset. Here's what you need to do:
+
+Task: You need to map user-provided values from a dataset column to a predefined set of accepted values.
+
+Input: You will receive a list of user input values for a column and a set of accepted values specified for that column.
+
+Instructions:
+
+For each user input value, map it to the closest matching accepted value from the predefined list.
+If an exact match is not found, leave it blank.
+
+Example:
+
+Column: Race
+User Input Values: ["Chi", "MALAY", "Other"]
+Accepted Values: ["African", "African-American", "Bidayuh", "Bumiputra", "Caucasian", "Chinese", "Eurasian", "Filipino", "Iban", "Indian", "Japanese", "Korean", "Malay", "Thai", "Others"]
+Mapping:
+
+Map "Chi" to "Chinese" (closest match).
+Map "MALAY" to "Malay" (closest match).
+Map "Bumiputera" to "Bumiputra" (exact match).
+Expected Output (in JSON format). Do not add on extra wording aside from the JSON object:
+{
+  "Chi": "Chinese",
+  "MALAY": "Malay",
+  "Bumiputera": "Bumiputra",
+}

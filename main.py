@@ -31,14 +31,8 @@ def extract_file_data(uploaded_file, rows_to_skip):
     raw_data_headers = extract_headers_from_excel_file(uploaded_file, rows_to_skip)
   return sampled_df, raw_data_headers
 
-def generate_mappings(raw_data_headers, country_specific_tlx_import_sheet_headers):
-  # Initialize the OpenAI client
-  client = OpenAI(
-    # This is the default and can be omitted
-    api_key=api_key,
-  )
-  llm_model = OpenAiMapper(client)
-  prompt = llm_model.create_mapping_prompt(raw_data_headers, country_specific_tlx_import_sheet_headers)
+def generate_column_header_mappings(llm_model, raw_data_headers, country_specific_tlx_import_sheet_headers):
+  prompt = llm_model.create_column_header_mapping_prompt(raw_data_headers, country_specific_tlx_import_sheet_headers)
   response = llm_model.get_response(prompt)
   return response
 
@@ -82,7 +76,14 @@ def display_mapped_data(data, corrected_mappings, headers):
   st.write("Mapped Data:")
   st.dataframe(mapped_data)
 
-def app():
+def generate_column_dropdown_value_mappings(llm_model, column_name, user_column_values):
+  fixed_column_dropdown_values_json = get_column_dropdown_values()
+  accepted_column_values = fixed_column_dropdown_values_json[column_name]
+  prompt = llm_model.create_column_value_mapping_prompt(user_column_values, accepted_column_values)
+  response = llm_model.get_response(prompt)
+  return response
+
+def app(llm_model):
   st.title("Upload and Process Excel File")
   uploaded_file = get_uploaded_file()
   # Input field for starting row number
@@ -101,7 +102,7 @@ def app():
 
     if st.session_state.confirmed_country:
       country_specific_tlx_import_sheet_headers = get_column_headers(st.session_state.confirmed_country.lower().replace(" ", "_"))
-      initial_mappings = generate_mappings(raw_data_headers, country_specific_tlx_import_sheet_headers)
+      initial_mappings = generate_column_header_mappings(llm_model, raw_data_headers, country_specific_tlx_import_sheet_headers)
       # initial_mappings = '''
       #   {
       #     "Employee ID": "Employee ID",
@@ -211,5 +212,13 @@ def app():
 
         # Write to the preformatted file
         # write_to_preformatted_excel(data, corrected_mappings, country_specific_tlx_import_sheet_headers[1:], st.session_state.confirmed_country)
+
 if __name__ == "__main__":
-  app()
+  # Initialize the OpenAI client
+  client = OpenAI(
+    # This is the default and can be omitted
+    api_key=api_key,
+  )
+  llm_model = OpenAiMapper(client)
+  print(generate_column_dropdown_value_mappings(llm_model, 'race', ['IBAN', 'CHI', 'Cauc', 'Bumiputera Sabah']))
+  # app(llm_model)
