@@ -1,0 +1,4 @@
+EmployeeCode,LastName,FirstName,MiddleName,EmployeeName,AliasName,Gender,Title,NationalityCode,BirthDate,BirthPlace,RaceCode,ReligionCode,MaritalStatus,MarriageDate,Email,Funds,MOMOccupationCode,MOMEmployeeType,MOMOccupationGroup,MOMCategory,WorkDaysPerWeek,WorkHoursPerDay,WorkHoursPerYear,BankAccountNo,BankBranch,BankCode,BankCurrencyCode,CPFMethodCode,CPFEmployeeType,FWLCode,SFC01
+11111111,Washington,Landry,,Landry Washington,,M,Mr.,MYS,07/27/1989,,Chinese,BUD,M,,Landry.washington@abc.com,,,,,,,,,080230135,081,7171,SGD,,,,lwash095
+11111112,Adkins,Xzavier,,Xzavier Adkins,,F,Ms.,MYS,01/31/1997,,Chinese,BUD,S,,Xzavier.Adkins@abc.com,,,,,,,,,528270302,281,7171,SGD,,,,xadkins067
+11111113,Higgins,Madalynn,,Madalynn Higgins,,F,Miss,MMR,02/25/1983,,Other,CHR,S,,Madalynn.Higgins@abc.com,,,,,,,,,098876895,018,7171,SGD,,,,mhiggs048

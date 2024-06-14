@@ -22,13 +22,13 @@ warnings.filterwarnings("ignore", category=UserWarning, module="openpyxl")
 ####################################################
 COUNTRY_OPTIONS = ['SINGAPORE', 'MALAYSIA', 'HONG KONG', 'INDONESIA', 'GLOBAL']
 
-def extract_file_data(uploaded_file):
+def extract_file_data(uploaded_file, rows_to_skip):
   if uploaded_file.name.endswith('.csv'):
       sampled_df = read_csv_and_sample(uploaded_file)
       raw_data_headers = extract_headers_from_csv(uploaded_file)
   else:
-    sampled_df = read_excel_and_sample(uploaded_file)
-    raw_data_headers = extract_headers_from_excel_file(uploaded_file)
+    sampled_df = read_excel_and_sample(uploaded_file, rows_to_skip)
+    raw_data_headers = extract_headers_from_excel_file(uploaded_file, rows_to_skip)
   return sampled_df, raw_data_headers
 
 def generate_mappings(raw_data_headers, country_specific_tlx_import_sheet_headers):
@@ -63,11 +63,27 @@ def display_initial_mappings(initial_mappings_json, country_specific_tlx_import_
     st.session_state.corrected_mappings[user_header_input] = corrected
   return st.session_state.corrected_mappings
 
+def display_mapped_data(data, corrected_mappings, headers):
+  # Skip the first row (instruction guide)
+  data = data.iloc[2:, :]
+  # Rename columns based on mappings
+  mapped_data = data.rename(columns=corrected_mappings)
+  # Ensure all required headers are present, fill missing with empty strings
+  for header in headers:
+    if header not in mapped_data.columns:
+      mapped_data[header] = ''
+
+  # Display the mapped data in a DataFrame
+  st.write("Mapped Data:")
+  st.dataframe(mapped_data)
+
 def app():
-  st.title("Upload and Process Excel/CSV File")
+  st.title("Upload and Process Excel File")
   uploaded_file = get_uploaded_file()
+  # Input field for starting row number
+  rows_to_skip = st.number_input("Enter the number of rows to skip. For example, if your data starts on the 3rd row, then input 2.", min_value=1, value=2)
   if uploaded_file is not None:
-    sampled_df, raw_data_headers = extract_file_data(uploaded_file)
+    sampled_df, raw_data_headers = extract_file_data(uploaded_file, rows_to_skip)
     st.write("File Uploaded Successfully.")
     st.write(sampled_df)
 
@@ -101,21 +117,21 @@ def app():
       #     "Birth Date (DD/MM/YYYY)*": "Birth Date (DD/MM/YYYY)",
       #     "Gender": "Gender",
       #     "Marital Status*": "Marital Status",
-      #     "Identification Number*": "Identification No",
+      #     "Identification Number*": "Identification Number",
       #     "Immigration Status*": "Immigration Status",
-      #     "Disabled Individual*": "N/A (Suggestion: Include the column as needed)",
-      #     "Disabled Spouse*": "N/A (Suggestion: Include the column as needed)",
-      #     "Contributing EPF?*": "N/A (Suggestion: Include the column as needed)",
-      #     "EPF Number*": "N/A (Suggestion: Include the column as needed)",
-      #     "Employee EPF Setting*": "N/A (Suggestion: Include the column as needed)",
-      #     "Employer EPF Setting*": "N/A (Suggestion: Include the column as needed)",
-      #     "PCB No.(Income tax no.)*": "N/A (Suggestion: Include the column as needed)",
-      #     "PCB Borne by Employer*": "N/A (Suggestion: Include the column as needed)",
-      #     "Socso Category*": "N/A (Suggestion: Include the column as needed)",
-      #     "Employment Insurance System(EIS)*": "N/A (Suggestion: Include the column as needed)",
-      #     "Zakat No.": "N/A (Suggestion: Include the column as needed)",
-      #     "Zakat Amount": "N/A (Suggestion: Include the column as needed)",
-      #     "Contributing HRDF?*": "N/A (Suggestion: Include the column as needed)",
+      #     "Disabled Individual*": "Disabled Individual",
+      #     "Disabled Spouse*": "Disabled Spouse",
+      #     "Contributing EPF?*": "Contributing EPF?",
+      #     "EPF Number*": "EPF Number",
+      #     "Employee EPF Setting*": "Employee EPF Setting",
+      #     "Employer EPF Setting*": "Employer EPF Setting",
+      #     "PCB No.(Income tax no.)*": "PCB No(Income tax no)",
+      #     "PCB Borne by Employer*": "PCB Borne by Employer",
+      #     "Socso Category*": "Socso Category",
+      #     "Employment Insurance System(EIS)*": "Employment Insurance System(EIS)",
+      #     "Zakat No.": "Zakat No.",
+      #     "Zakat Amount": "Zakat Amount",
+      #     "Contributing HRDF?*": "Contributing HRDF?",
       #     "Passport No": "Passport No.",
       #     "Passport Date of Issue (DD/MM/YYYY)": "Passport Date of Issue (DD/MM/YYYY)",
       #     "Passport Date of Expiry (DD/MM/YYYY)": "Passport Date of Expiry (DD/MM/YYYY)",
@@ -160,21 +176,20 @@ def app():
       #     "Next of Kins Relationship": "Next of Kin's Relationship",
       #     "Next of Kins Marriage Date (Spouse) (DD/MM/YYYY)": "Next of Kin's Marriage Date (Spouse) (DD/MM/YYYY)",
       #     "Next of Kins Contact No.": "Next of Kin's Contact No.",
-      #     "Accumulated remuneration/Benefit-In-Kind (BIK)/Value Of Living Accomodation (VOLA)*": "N/A (Suggestion: Include the column as needed)",
-      #     "Accumulated EPF and Other Approved Funds [include life premium insurance]*": "N/A (Suggestion: Include the column as needed)",
-      #     "Accumulated MTD paid (including MTD on additional remuneration)*": "N/A (Suggestion: Include the column as needed)",
-      #     "Accumulated SOCSO Contribution*": "N/A (Suggestion: Include the column as needed)",
-      #     "Accumulated Zakat paid*": "N/A (Suggestion: Include the column as needed)",
-      #     "Payroll year to start applying accumulated deductions.*": "N/A (Suggestion: Include the column as needed)",
-      #     "Payroll month to start applying accumulated deductions.*": "N/A (Suggestion: Include the column as needed)",
+      #     "Accumulated remuneration/Benefit-In-Kind (BIK)/Value Of Living Accomodation (VOLA)*": "Accumulated remuneration/Benefit-In-Kind (BIK)/Value Of Living Accomodation (VOLA)",
+      #     "Accumulated EPF and Other Approved Funds [include life premium insurance]*": "Accumulated EPF and Other Approved Funds [include life premium insurance]",
+      #     "Accumulated MTD paid (including MTD on additional remuneration)*": "Accumulated MTD paid (including MTD on additional remuneration)",
+      #     "Accumulated SOCSO Contribution*": "Accumulated SOCSO Contribution",
+      #     "Accumulated Zakat paid*": "Accumulated Zakat paid",
+      #     "Payroll year to start applying accumulated deductions.*": "Payroll year to start applying accumulated deductions.",
+      #     "Payroll month to start applying accumulated deductions.*": "Payroll month to start applying accumulated deductions.",
       #     "Covid-19 Vaccination Status": "Covid-19 Vaccination Status",
       #     "Covid-19 Vaccine Brand": "Covid-19 Vaccine Brand",
       #     "Date of 1st Dose (DD/MM/YYYY)": "Date of 1st Dose (DD/MM/YYYY)",
       #     "Date of 2nd Dose (DD/MM/YYYY)": "Date of 2nd Dose (DD/MM/YYYY)",
       #     "Covid-19 Vaccine Booster Brand": "Covid-19 Vaccine Booster Brand",
       #     "Date of Booster Dose (DD/MM/YYYY)": "Date of Booster Dose (DD/MM/YYYY)",
-      #     "Vaccination Remarks": "Vaccination Remarks",
-      #     "Unnamed: 91": "N/A (Suggestion: Include the column as needed)"
+      #     "Vaccination Remarks": "Vaccination Remarks"
       #   }
       # '''
       initial_mappings_cleaned = initial_mappings.replace('\n', '')
@@ -186,9 +201,10 @@ def app():
         st.write("Final Corrected Mappings:", corrected_mappings)
         # Read the uploaded file again to get the full data
         data = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
+        print(data.head(5))   # at this point there is still data
+        display_mapped_data(data, st.session_state.corrected_mappings, country_specific_tlx_import_sheet_headers[1:])
 
         # Write to the preformatted file
-        write_to_preformatted_excel(data, corrected_mappings, country_specific_tlx_import_sheet_headers[1:], st.session_state.confirmed_country)
-
+        # write_to_preformatted_excel(data, corrected_mappings, country_specific_tlx_import_sheet_headers[1:], st.session_state.confirmed_country)
 if __name__ == "__main__":
   app()

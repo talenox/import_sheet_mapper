@@ -1,75 +1,93 @@
 import pandas as pd
 import streamlit as st
-from io import BytesIO
+import os
 from openpyxl import load_workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
 import shutil
 
 def get_uploaded_file():
-  uploaded_file = st.file_uploader("Choose a file", type=["xlsx", "xls", "csv"])
+  uploaded_file = st.file_uploader("Choose a file", type=["xlsx", "xls"])
   return uploaded_file
 
 # Read the Excel file and sample rows of data
-def read_excel_and_sample(filename, sheet_name=0, max_rows=10):
+def read_excel_and_sample(filename, rows_to_skip, sheet_name=0, max_rows=10):
   # Read the entire Excel file
-  df = pd.read_excel(filename, sheet_name=sheet_name, skiprows=2)
+  df = pd.read_excel(filename, sheet_name=sheet_name, skiprows=rows_to_skip)
   # Extract the header rows
   headers = df.columns.tolist()
   # Sample a maximum of 10 rows
-  sampled_df = df.sample(n=min(max_rows, len(df)), random_state=1)
+  sampled_df = df.head(10)
   # Combine headers with sampled data
   result_df = pd.DataFrame(sampled_df, columns=headers)
 
   return result_df
 
 # Read the Excel file and extract the header columns
-def extract_headers_from_excel_file(filename, sheet_name=0):
+def extract_headers_from_excel_file(filename, rows_to_skip, sheet_name=0):
   # Read the entire Excel file
-  df = pd.read_excel(filename, sheet_name=sheet_name, skiprows=2)
+  df = pd.read_excel(filename, sheet_name=sheet_name, skiprows=rows_to_skip)
   # Extract the header rows
   headers = df.columns.tolist()
   return headers
 
 # Write to Excel file
 def write_to_preformatted_excel(data, mappings, headers, country):
-    # Load the preformatted Excel file
+    # Define paths
     template_path = f"tlx_import_sheet_samples/{country}.xlsx"
     temp_path = f"temp_{country}.xlsx"
+
+    # Copy template to temp file
     shutil.copy(template_path, temp_path)
 
-    # Load the copied Excel file
-    wb = load_workbook(temp_path)
-    ws = wb.active
-    # Create a DataFrame from the data
-    df = pd.DataFrame(data)
-    # Rename the columns based on mappings
-    df = df.rename(columns=mappings)
-    # Ensure all required headers are present, filling with empty strings if missing
-    for header in headers:
-        if header not in df.columns:
-            df[header] = ''
-    # Reorder columns to match the headers
-    df = df[headers]
-    # Write the DataFrame to the copied Excel file
-    for row in dataframe_to_rows(df, index=False, header=False):
-        ws.append(row)
-    # Save the file
-    output = BytesIO()
-    wb.save(output)
-    output.seek(0)
+    try:
+        # Load workbook
+        wb = load_workbook(temp_path)
+        ws = wb.active
 
-    file_name = f"{country.lower()}.xlsx"
-    st.download_button(
-        label="Download Processed File",
-        data=output,
-        file_name=file_name,
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
+        # Create DataFrame from data
+        df = pd.DataFrame(data)
+
+        # Rename columns based on mappings
+        df = df.rename(columns=mappings)
+
+        # Ensure all required headers are present, fill missing with empty strings
+        for header in headers:
+            if header not in df.columns:
+                df[header] = ''
+
+        # Reorder columns to match headers
+        df = df[headers]
+
+        # Write DataFrame to workbook
+        for row in dataframe_to_rows(df, index=False, header=False):
+            ws.append(row)
+
+        # Save workbook
+        wb.save(temp_path)
+
+        # Prepare file for download
+        with open(temp_path, 'rb') as f:
+            data = f.read()
+
+        st.download_button(
+            label="Download Processed File",
+            data=data,
+            file_name=f"{country.lower()}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+
+    except Exception as e:
+        st.error(f"Error processing Excel file: {e}")
+
+    finally:
+        # Clean up temp file
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
 
 # Read CSV and sample rows of data
 def read_csv_and_sample(filename, max_rows=10):
   # Read the entire CSV file
-  df = pd.read_csv(filename)
+  df = pd.read_csv(filename, encoding='utf-8')
   # Extract the header rows
   headers = df.columns.tolist()
   # Sample a maximum of 10 rows
