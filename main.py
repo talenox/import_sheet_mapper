@@ -64,15 +64,20 @@ def display_initial_mappings(initial_mappings_json, country_specific_tlx_import_
   return st.session_state.corrected_mappings
 
 def display_mapped_data(data, corrected_mappings, headers):
-  # Skip the first row (instruction guide)
-  data = data.iloc[2:, :]
-  # Rename columns based on mappings
-  mapped_data = data.rename(columns=corrected_mappings)
+  # Initialize an empty DataFrame with the specified headers
+  mapped_data = pd.DataFrame(columns=headers)
+  
+  # Loop through mappings and populate the mapped_data DataFrame
+  for source_col, target_col in corrected_mappings.items():
+    # Only map if the source column exists in data and target column is in headers
+    if source_col in data.columns and target_col in headers:
+      mapped_data[target_col] = data[source_col]
+    
   # Ensure all required headers are present, fill missing with empty strings
   for header in headers:
     if header not in mapped_data.columns:
       mapped_data[header] = ''
-
+  
   # Display the mapped data in a DataFrame
   st.write("Mapped Data:")
   st.dataframe(mapped_data)
@@ -193,6 +198,7 @@ def app():
       #   }
       # '''
       initial_mappings_cleaned = initial_mappings.replace('\n', '')
+      print(initial_mappings_cleaned)      
       initial_mappings_json = json.loads(initial_mappings_cleaned)
       st.write("Please review and correct the mappings:")
       corrected_mappings = display_initial_mappings(initial_mappings_json, country_specific_tlx_import_sheet_headers)
@@ -200,8 +206,7 @@ def app():
       if st.button("Submit Mappings"):
         st.write("Final Corrected Mappings:", corrected_mappings)
         # Read the uploaded file again to get the full data
-        data = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
-        print(data.head(5))   # at this point there is still data
+        data = pd.read_excel(uploaded_file, skiprows=rows_to_skip)
         display_mapped_data(data, st.session_state.corrected_mappings, country_specific_tlx_import_sheet_headers[1:])
 
         # Write to the preformatted file
