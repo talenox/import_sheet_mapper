@@ -31,8 +31,9 @@ def extract_file_data(uploaded_file, rows_to_skip):
     raw_data_headers = extract_headers_from_excel_file(uploaded_file, rows_to_skip)
   return sampled_df, raw_data_headers
 
-def generate_column_header_mappings(llm_model, raw_data_headers, country_specific_tlx_import_sheet_headers):
-  prompt = llm_model.create_column_header_mapping_prompt(raw_data_headers, country_specific_tlx_import_sheet_headers)
+def generate_column_header_mappings(llm_model, raw_data_headers, country_specific_tlx_import_sheet_headers, country_specific_sample_values):
+  prompt = llm_model.create_column_header_mapping_prompt(raw_data_headers, country_specific_tlx_import_sheet_headers, country_specific_sample_values)
+  print(prompt)
   response = llm_model.get_response(prompt)
   return response
 
@@ -107,11 +108,12 @@ def app(llm_model):
 
     if st.session_state.confirmed_country:
       country_specific_tlx_import_sheet_headers = get_column_headers(st.session_state.confirmed_country.lower().replace(" ", "_"))
+      country_specific_sample_values = get_sample_values(st.session_state.confirmed_country.lower().replace(" ", "_"))
       if 'initial_mappings' not in st.session_state:
-        # initial_mappings = generate_column_header_mappings(llm_model, raw_data_headers, country_specific_tlx_import_sheet_headers)
-        initial_mappings = '''
-          {  "EmployeeCode": "Employee ID",  "LastName": "Last Name",  "FirstName": "First Name",  "MiddleName": "Nickname (if different from employee first name)",  "EmployeeName": "Statutory Name",  "AliasName": "Chinese Name",  "Gender": "Gender",  "Title": "Job Title",  "NationalityCode": "Nationality",  "BirthDate": "Birth Date (DD/MM/YYYY)",  "BirthPlace": "Passport Place of Issue",  "RaceCode": "Race",  "ReligionCode": "Religion",  "MaritalStatus": "Marital Status",  "MarriageDate": "Marriage Date (Spouse) (DD/MM/YYYY)",  "Email": "Email",  "Funds": "Payment Method",  "MOMOccupationCode": "Role",  "MOMEmployeeType": "Working Day",  "MOMOccupationGroup": "Department",  "MOMCategory": "Location/Branch",  "WorkDaysPerWeek": "Working Day",  "WorkHoursPerDay": "Working Hour",  "WorkHoursPerYear": "Rate of Pay",  "BankAccountNo": "Bank Account No.",  "BankBranch": "Bank Branch No.",  "BankCode": "Bank Type",  "BankCurrencyCode": "Currency of Salary",  "CPFMethodCode": "CPF in lieu",  "CPFEmployeeType": "Rate of Pay",  "FWLCode": "Confirmation Date (DD/MM/YYYY)",  "SFC01": "Overwrite Jobs Array (Ignore current jobs columns)"}
-        '''
+        initial_mappings = generate_column_header_mappings(llm_model, raw_data_headers, country_specific_tlx_import_sheet_headers, country_specific_sample_values)
+        # initial_mappings = '''
+        #   {  "EmployeeCode": "Employee ID",  "LastName": "Last Name",  "FirstName": "First Name",  "MiddleName": "Nickname (if different from employee first name)",  "EmployeeName": "Statutory Name",  "AliasName": "Chinese Name",  "Gender": "Gender",  "Title": "Job Title",  "NationalityCode": "Nationality",  "BirthDate": "Birth Date (DD/MM/YYYY)",  "BirthPlace": "Passport Place of Issue",  "RaceCode": "Race",  "ReligionCode": "Religion",  "MaritalStatus": "Marital Status",  "MarriageDate": "Marriage Date (Spouse) (DD/MM/YYYY)",  "Email": "Email",  "Funds": "Payment Method",  "MOMOccupationCode": "Role",  "MOMEmployeeType": "Working Day",  "MOMOccupationGroup": "Department",  "MOMCategory": "Location/Branch",  "WorkDaysPerWeek": "Working Day",  "WorkHoursPerDay": "Working Hour",  "WorkHoursPerYear": "Rate of Pay",  "BankAccountNo": "Bank Account No.",  "BankBranch": "Bank Branch No.",  "BankCode": "Bank Type",  "BankCurrencyCode": "Currency of Salary",  "CPFMethodCode": "CPF in lieu",  "CPFEmployeeType": "Rate of Pay",  "FWLCode": "Confirmation Date (DD/MM/YYYY)",  "SFC01": "Overwrite Jobs Array (Ignore current jobs columns)"}
+        # '''
         initial_mappings_cleaned = initial_mappings.replace('\n', '')
         initial_mappings_json = json.loads(initial_mappings_cleaned)
         st.session_state['initial_mappings'] = initial_mappings_json

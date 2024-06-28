@@ -11,7 +11,7 @@ class OpenAiMapper:
     return summary_prompt
   
   # This method creates a prompt to map column headers
-  def create_column_header_mapping_prompt(self, raw_data_headers, tlx_import_sheet_headers, prompt_file='base_prompt.txt'):
+  def create_column_header_mapping_prompt(self, raw_data_headers, tlx_import_sheet_headers, country_specific_sample_values, prompt_file='base_prompt.txt'):
     script_dir = os.path.dirname(os.path.abspath(__file__))
     directory_path = os.path.join(script_dir, f'../sample_prompts/{prompt_file}')
     # Open the file and read its content
@@ -23,6 +23,7 @@ class OpenAiMapper:
 
       User-provided column headers: {raw_data_headers}
       Fixed column headers: {tlx_import_sheet_headers}
+      Sample values of selected fixed header columns: {country_specific_sample_values}
     """
     return prompt_text
 
