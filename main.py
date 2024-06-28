@@ -89,7 +89,7 @@ def generate_column_dropdown_value_mappings(llm_model, column_name, user_column_
   return response
 
 def app(llm_model):
-  st.title("Upload and Process Excel File")
+  st.title("Talenox's import sheet mapper")
   uploaded_file = get_uploaded_file()
   # Input field for starting row number
   rows_to_skip = st.number_input("Enter the number of rows to skip. For example, if your data starts on the 3rd row, then input 2.", min_value=1, value=2)
