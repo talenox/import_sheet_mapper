@@ -117,7 +117,7 @@ def app(llm_model):
   st.title("Talenox's import sheet mapper")
   uploaded_file = get_uploaded_file()
   # Input field for starting row number
-  rows_to_skip = st.number_input("Enter the number of rows to skip. For example, if your data starts on the 3rd row, then input 2.", min_value=1, value=2)
+  rows_to_skip = st.number_input("Enter the number of rows to skip. For example, if your data starts on the 3rd row, then input 2.", min_value=1, value=1)
   if uploaded_file is not None:
     sampled_df, raw_data_headers = extract_header_and_sample_data(uploaded_file, rows_to_skip)
     user_sample_values = extract_unique_sample_values(uploaded_file, rows_to_skip, sheet_name=0)
