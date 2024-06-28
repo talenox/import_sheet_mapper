@@ -1,5 +1,6 @@
 import os
 from datetime import datetime
+import json
 
 # We maintain a list of column headers for each country supported by our import sheet
 SINGAPORE_COLUMN_HEADERS = [
@@ -538,3 +539,27 @@ def get_column_headers(country="singapore"):
       return(file_contents)
   else:
     return(f"{country}.csv not found in {latest_contents_path}")
+
+def get_column_dropdown_values():
+  # Define the directory path relative to this script's location
+  script_dir = os.path.dirname(os.path.abspath(__file__))
+  directory_path = os.path.join(script_dir, '../tlx_column_headers')
+  # Get a list of directories (dates)
+  dates = [entry for entry in os.listdir(directory_path) if os.path.isdir(os.path.join(directory_path, entry))]
+  # Parse dates into datetime objects
+  parsed_dates = [datetime.strptime(date, "%Y-%m-%d") for date in dates]
+  # Identify the latest date
+  latest_date = max(parsed_dates)
+  # Find the directory corresponding to the latest date
+  latest_directory = latest_date.strftime("%Y-%m-%d")
+  # Access the contents of the latest directory
+  latest_contents_path = os.path.join(directory_path, latest_directory)
+  # Define the path to the target CSV file
+  target_file = os.path.join(latest_contents_path, "column_dropdown_values.json")
+  # Check if the target file exists and print its contents
+  if os.path.isfile(target_file):
+    with open(target_file, 'r') as file:
+      data = json.load(file)
+      return data
+  else:
+    return f"File not found in {latest_contents_path}"

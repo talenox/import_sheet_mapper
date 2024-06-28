@@ -1,0 +1,43 @@
+{
+  "race": [
+    "African",
+    "African-American",
+    "Bidayuh",
+    "Bumiputra",
+    "Caucasian",
+    "Chinese",
+    "Eurasian",
+    "Filipino",
+    "Iban",
+    "Indian",
+    "Japanese",
+    "Korean",
+    "Malay",
+    "Thai",
+    "Others"
+  ],
+  "religion": [
+    "Taoism",
+    "Buddhism",
+    "Confucianism",
+    "Bahá'í Faith",
+    "Islam",
+    "Catholicism",
+    "Christianity",
+    "Hinduism",
+    "Sikhism",
+    "Judaism",
+    "Jainism",
+    "Others",
+    "No Religion",
+    "Free Thinker"
+  ],
+  "gender": ["Male", "Female"],
+  "marital status": [
+    "Single", 
+    "Widowed", 
+    "Separated",
+    "Married",
+    "Divorced"
+  ]
+}

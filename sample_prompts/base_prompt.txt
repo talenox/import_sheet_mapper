@@ -1,4 +1,4 @@
-I have a task for you involving column header mapping. I will provide you with a string of header column names given as user input, and I have a list of fixed column header names to map them to. Your task is to map each user-provided header column name to the closest matching fixed column header name. If there is an exact match, return it. If not, find the closest one and return it with a note saying it's a suggestion. More than one mapping per input column is okay if relevant.
+I have a task for you involving column header mapping. I will provide you with a string of header column names given as user input, and I have a list of fixed column header names to map them to. Your task is to map each user-provided header column name to the closest matching fixed column header name. If there is an exact match, return it. If not, find the closest one and return it with a note saying it's a suggestion. One fixed header column can only be mapped to not more than one user input header column and vice versa.
 
 Example:
 
