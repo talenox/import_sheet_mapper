@@ -60,25 +60,37 @@ def generate_column_header_mappings(llm_model, raw_data_headers, raw_sample_valu
 
 # This method displays the initial mappings done by the LLM on the UI
 def display_initial_mappings(initial_mappings_json, country_specific_tlx_import_sheet_headers):
-  if 'corrected_mappings' not in st.session_state:
-    st.session_state.corrected_mappings = {}
+    if 'corrected_mappings' not in st.session_state:
+      st.session_state.corrected_mappings = {}
 
-  key = 0
-  country_specific_tlx_import_sheet_headers = [""] + country_specific_tlx_import_sheet_headers
-  for user_header, initial_map in initial_mappings_json.items():
-    # Set initial value to the index of initial_map if it exists, else default to 0
-    initial_index = country_specific_tlx_import_sheet_headers.index(initial_map) if initial_map in country_specific_tlx_import_sheet_headers else 0
-    # Create a column layout
-    col1, col2 = st.columns([3, 3])
-    # Add text box for user header in the first column
-    with col1:
-      user_header_input = st.text_input(f"User Header for '{user_header}':", user_header, disabled=True)
-    # Add dropdown for predefined header in the second column
-    with col2:
-      corrected = st.selectbox(f"Predefined Header for '{user_header}':", country_specific_tlx_import_sheet_headers, index=initial_index,key=user_header)
-      key += 1
-    st.session_state.corrected_mappings[user_header_input] = corrected
-  return st.session_state.corrected_mappings
+    country_specific_tlx_import_sheet_headers = [""] + country_specific_tlx_import_sheet_headers
+
+    def create_input_and_selectbox(header, value, index, key, highlight=False):
+      col1, col2 = st.columns([3, 3])
+      with col1:
+        user_header_input = st.text_input(f"User Header for '{header}':", header, disabled=True)
+      with col2:
+        if highlight:
+          corrected = st.selectbox(f"Predefined Header for '{header}':", country_specific_tlx_import_sheet_headers, index=index, key=key, format_func=lambda x: f'🔴 {x}' if x == value else x)
+        else:
+          corrected = st.selectbox(f"Predefined Header for '{header}':", country_specific_tlx_import_sheet_headers, index=index, key=key)
+      return user_header_input, corrected
+
+    key = 0
+    for user_header, initial_map in initial_mappings_json.items():
+      if user_header == "Suggestion" and isinstance(initial_map, dict):
+        for suggestion_header, suggestion_value in initial_map.items():
+          initial_index = country_specific_tlx_import_sheet_headers.index(suggestion_value) if suggestion_value in country_specific_tlx_import_sheet_headers else 0
+          user_header_input, corrected = create_input_and_selectbox(suggestion_header, suggestion_value, initial_index, key, highlight=True)
+          st.session_state.corrected_mappings[user_header_input] = corrected
+          key += 1
+      else:
+        initial_index = country_specific_tlx_import_sheet_headers.index(initial_map) if initial_map in country_specific_tlx_import_sheet_headers else 0
+        user_header_input, corrected = create_input_and_selectbox(user_header, initial_map, initial_index, key)
+        st.session_state.corrected_mappings[user_header_input] = corrected
+        key += 1
+
+    return st.session_state.corrected_mappings
 
 # This method displays the final mappings done by the LLM and corrected by the user on the UI
 def display_mapped_data(data, corrected_mappings, headers):

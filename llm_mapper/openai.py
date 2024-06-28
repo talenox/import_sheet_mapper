@@ -53,6 +53,7 @@ class OpenAiMapper:
           "content": prompt,
         }
       ],
-      model="gpt-4-turbo",
+      model="gpt-3.5-turbo",
     )
+    print(response.choices[0].message.content)
     return response.choices[0].message.content
