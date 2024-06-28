@@ -16,7 +16,7 @@ def read_excel_and_sample(filename, rows_to_skip, sheet_name=0, max_rows=10):
   # Extract the header rows
   headers = df.columns.tolist()
   # Sample a maximum of 10 rows
-  sampled_df = df.head(10)
+  sampled_df = df.head(max_rows)
   # Combine headers with sampled data
   result_df = pd.DataFrame(sampled_df, columns=headers)
 

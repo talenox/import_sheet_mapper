@@ -7,7 +7,6 @@ SINGAPORE_COLUMN_HEADERS = [
  "Employee ID",
  "First Name",
  "Last Name",
- "Statutory Name",
  "Nickname",
  "Chinese Name",
  "Email",
