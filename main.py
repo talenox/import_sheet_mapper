@@ -4,17 +4,13 @@ import os
 import json
 import streamlit as st
 import warnings
-from llm_mapper.openai import OpenAiMapper
+from llm_mapper.openai import OpenAi
+from llm_mapper.gemini import Gemini
 from file_processor.file_processor import *
 from static_data_generator.tlx_column_header_mapper import *
 
 # Load environment variables from .env file
 load_dotenv()
-
-# Get the OpenAI API key from environment variables
-api_key = os.environ.get("OPENAI_API_KEY")
-if not api_key:
-  raise ValueError("OpenAI API key is not set. Please check your .env file.")
 
 # Suppress openpyxl warnings
 warnings.filterwarnings("ignore", category=UserWarning, module="openpyxl")
@@ -40,23 +36,36 @@ def display_initial_mappings(initial_mappings_json, country_specific_tlx_import_
   if 'corrected_mappings' not in st.session_state:
     st.session_state.corrected_mappings = {}
 
-  key = 0
   country_specific_tlx_import_sheet_headers = [""] + country_specific_tlx_import_sheet_headers
-  for user_header, initial_map in initial_mappings_json.items():
-    # Set initial value to the index of initial_map if it exists, else default to 0
-    initial_index = country_specific_tlx_import_sheet_headers.index(initial_map) if initial_map in country_specific_tlx_import_sheet_headers else 0
-    # Create a column layout
+
+  def create_input_and_selectbox(header, value, index, key, highlight=False):
     col1, col2 = st.columns([3, 3])
-    # Add text box for user header in the first column
     with col1:
-      user_header_input = st.text_input(f"User Header for '{user_header}':", user_header, disabled=True)
-    # Add dropdown for predefined header in the second column
+      user_header_input = st.text_input(f"User Header for '{header}':", header, disabled=True, key=header)
     with col2:
-      corrected = st.selectbox(f"Predefined Header for '{user_header}':", country_specific_tlx_import_sheet_headers, index=initial_index,key=user_header)
+      if highlight:
+        corrected = st.selectbox(f"Predefined Header for '{header}':", country_specific_tlx_import_sheet_headers, index=index, key=key, format_func=lambda x: f'🔴 {x}' if x == value else x)
+      else:
+        corrected = st.selectbox(f"Predefined Header for '{header}':", country_specific_tlx_import_sheet_headers, index=index, key=key)
+    return user_header_input, corrected
+
+  key = 0
+  for user_header, initial_map in initial_mappings_json.items():
+    if user_header == "Suggestion" and isinstance(initial_map, dict):
+      for suggestion_header, suggestion_value in initial_map.items():
+        initial_index = country_specific_tlx_import_sheet_headers.index(suggestion_value) if suggestion_value in country_specific_tlx_import_sheet_headers else 0
+        user_header_input, corrected = create_input_and_selectbox(suggestion_header, suggestion_value, initial_index, key, highlight=True)
+        st.session_state.corrected_mappings[user_header_input] = corrected
+        key += 1
+    else:
+      initial_index = country_specific_tlx_import_sheet_headers.index(initial_map) if initial_map in country_specific_tlx_import_sheet_headers else 0
+      user_header_input, corrected = create_input_and_selectbox(user_header, initial_map, initial_index, key)
+      st.session_state.corrected_mappings[user_header_input] = corrected
       key += 1
-    st.session_state.corrected_mappings[user_header_input] = corrected
+
   return st.session_state.corrected_mappings
 
+# This method displays the final mappings done by the LLM and corrected by the user on the UI
 def display_mapped_data(data, corrected_mappings, headers):
   fixed_value_columns = get_column_dropdown_values().keys()
   # Initialize an empty DataFrame with the specified headers
@@ -133,9 +142,10 @@ def app(llm_model):
 if __name__ == "__main__":
   # st.session_state.clear()
   # Initialize the OpenAI client
-  client = OpenAI(
-    # This is the default and can be omitted
-    api_key=api_key,
-  )
-  llm_model = OpenAiMapper(client)
+  # llm_model = OpenAi()
+  # print(llm_model.get_response("What is the capital of Australia?"))
+  
+  # Initialize the Gemini client
+  llm_model = Gemini()
+  # print(llm_model.get_response("What is the capital of Australia?"))
   app(llm_model)

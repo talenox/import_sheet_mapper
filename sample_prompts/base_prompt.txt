@@ -1,16 +1,31 @@
-I have a task for you involving column header mapping. I will provide you with a string of header column names given as user input, and I have a list of fixed column header names to map them to. Your task is to map each user-provided header column name to the closest matching fixed column header name. If there is an exact match, return it. If not, find the closest one and return it with a note saying it's a suggestion. One fixed header column can only be mapped to not more than one user input header column and vice versa.
+I have a task for you involving column header mapping. I will provide you with a string of header column names given as user input, and I have a list of fixed column header names to map them to. Your task is to map each user-provided header column name to the closest matching fixed column header name based on the header names as well as the sample values for each column provided. If there is an exact match, return it. If not, find the closest one and return it in a separate json called "Suggestion". One fixed header column can only be mapped to not more than one user input header column and vice versa.
+
+Important: Ensure that the context of the headers is taken into consideration by analyzing both the header names and the sample values. Do not map columns with different contextual meanings.
 
 Example:
 
 Input:
-User-provided column headers: Full Name, Age, Email
-Fixed column headers: First Name, Last Name, Given Name, Birthdate, Email Address, Contact Number, Mailing Address
+User-provided column headers: Full Name, Email, Address
+Fixed column headers: First Name, Last Name, Email Address, Mailing Address
 
 Expected Output (in JSON format). Do not add on extra wording aside from the JSON object:
 {
-  "Full Name": "First Name",
-  "Full Name": "Last Name",
-  "Full Name": "Given Name",
-  "Age": "Birthdate",
-  "Email": "Email Address",
+  "Full Name": {
+    column: "First Name",
+    explanation: "Exact Match"
+  },
+  "Full Name": {
+    column: "Last Name",
+    explanation: "Exact Match"
+  },
+  "Email": {
+    column: "Email Address",
+    explanation: "Exact Match"
+  },
+  "Suggestion": {
+    "Address": {
+      column: "Mailing Address",
+      explanation: "based on the context of providing an address"
+    }
+  }
 }
