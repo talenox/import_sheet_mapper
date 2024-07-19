@@ -7,7 +7,6 @@ SINGAPORE_COLUMN_HEADERS = [
  "Employee ID",
  "First Name",
  "Last Name",
- "Statutory Name",
  "Nickname",
  "Chinese Name",
  "Email",
@@ -563,3 +562,34 @@ def get_column_dropdown_values():
       return data
   else:
     return f"File not found in {latest_contents_path}"
+
+def get_sample_values(country="singapore"):
+  # Define the directory path relative to this script's location
+  script_dir = os.path.dirname(os.path.abspath(__file__))
+  directory_path = os.path.join(script_dir, '../tlx_column_headers')
+  
+  # Get a list of directories (dates)
+  dates = [entry for entry in os.listdir(directory_path) if os.path.isdir(os.path.join(directory_path, entry))]
+  
+  # Parse dates into datetime objects
+  parsed_dates = [datetime.strptime(date, "%Y-%m-%d") for date in dates]
+  
+  # Identify the latest date
+  latest_date = max(parsed_dates)
+  
+  # Find the directory corresponding to the latest date
+  latest_directory = latest_date.strftime("%Y-%m-%d")
+  
+  # Access the contents of the latest directory
+  latest_contents_path = os.path.join(directory_path, latest_directory)
+  
+  # Define the path to the target JSON file
+  target_file = os.path.join(latest_contents_path, f"{country}_sample_data.json")
+  
+  # Check if the target file exists and load its contents
+  if os.path.isfile(target_file):
+    with open(target_file, 'r') as file:
+      json_contents = json.load(file)
+      return json.dumps(json_contents, ensure_ascii=False, indent=2)
+  else:
+    return f"{country}.json not found in {latest_contents_path}"

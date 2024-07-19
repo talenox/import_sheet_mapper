@@ -1,16 +1,19 @@
-I have a task for you involving column header mapping. I will provide you with a string of header column names given as user input, and I have a list of fixed column header names to map them to. Your task is to map each user-provided header column name to the closest matching fixed column header name. If there is an exact match, return it. If not, find the closest one and return it with a note saying it's a suggestion. One fixed header column can only be mapped to not more than one user input header column and vice versa.
+I have a task for you involving column header mapping. I will provide you with a string of header column names given as user input, and I have a list of fixed column header names to map them to. Your task is to map each user-provided header column name to the closest matching fixed column header name based on the header names as well as the sample values I provide you. If there is an exact match, return it. If not, find the closest one and return it in a separate json called "Suggestion". One fixed header column can only be mapped to not more than one user input header column and vice versa.
 
 Example:
 
 Input:
-User-provided column headers: Full Name, Age, Email
-Fixed column headers: First Name, Last Name, Given Name, Birthdate, Email Address, Contact Number, Mailing Address
+User-provided column headers: Full Name, Age, Email, Address
+Fixed column headers: First Name, Last Name, Birthdate, Email Address, Mailing Address
 
-Expected Output (in JSON format). Do not add on extra wording aside from the JSON object:
+Expected Output (in JSON format):
 {
   "Full Name": "First Name",
   "Full Name": "Last Name",
-  "Full Name": "Given Name",
   "Age": "Birthdate",
   "Email": "Email Address",
+  "Suggestion": {
+    "Address": "Mailing Address"
+  }
 }
+Return only the JSON object in your reply without additional explanations, without any markdown formatting or code block delimiters.
