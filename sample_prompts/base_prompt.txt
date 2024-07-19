@@ -8,7 +8,7 @@ Input:
 User-provided column headers: Full Name, Email, Address
 Fixed column headers: First Name, Last Name, Email Address, Mailing Address
 
-Expected Output (in JSON format). Do not add on extra wording aside from the JSON object:
+Expected Output (in JSON format):
 {
   "Full Name": {
     column: "First Name",
@@ -29,3 +29,4 @@ Expected Output (in JSON format). Do not add on extra wording aside from the JSO
     }
   }
 }
+Return only the JSON object in your reply without additional explanations, without any markdown formatting or code block delimiters.

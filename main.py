@@ -18,23 +18,46 @@ warnings.filterwarnings("ignore", category=UserWarning, module="openpyxl")
 ####################################################
 COUNTRY_OPTIONS = ['SINGAPORE', 'MALAYSIA', 'HONG KONG', 'INDONESIA', 'GLOBAL']
 
-def extract_file_data(uploaded_file, rows_to_skip):
+# This method extracts a list of header column names and some sample data for display purposes
+def extract_header_and_sample_data(uploaded_file, rows_to_skip):
   if uploaded_file.name.endswith('.csv'):
       sampled_df = read_csv_and_sample(uploaded_file)
       raw_data_headers = extract_headers_from_csv(uploaded_file)
   else:
     sampled_df = read_excel_and_sample(uploaded_file, rows_to_skip)
     raw_data_headers = extract_headers_from_excel_file(uploaded_file, rows_to_skip)
+  
   return sampled_df, raw_data_headers
 
-def generate_column_header_mappings(llm_model, raw_data_headers, country_specific_tlx_import_sheet_headers):
-  prompt = llm_model.create_column_header_mapping_prompt(raw_data_headers, country_specific_tlx_import_sheet_headers)
+# This method extracts unique values for each column in the sheet and packs it up into a json to feed into the LLM prompt
+def extract_unique_sample_values(uploaded_file, rows_to_skip, sheet_name=0):
+  df = pd.read_excel(uploaded_file, sheet_name=sheet_name, skiprows=rows_to_skip)
+  # Initialize dictionary to store sampled data lists
+  sampled_data = {}
+
+  # Iterate over columns in the DataFrame
+  for col in df.columns:
+    # Get unique non-NaN values from the column
+    unique_values = df[col].dropna().unique()[:2].tolist()
+    # Add to sampled_data if there are unique values
+    if unique_values:
+      sampled_data[col] = unique_values
+
+  # Convert dictionary to JSON string with 2-space indentation
+  sample_data = json.dumps(sampled_data, ensure_ascii=False, indent=2)
+  
+  return sample_data
+
+# This method calls the LLM to create mappings based on the given column names and their data
+def generate_column_header_mappings(llm_model, raw_data_headers, raw_sample_values, country_specific_tlx_import_sheet_headers, country_specific_sample_values):
+  prompt = llm_model.create_column_header_mapping_prompt(raw_data_headers, raw_sample_values, country_specific_tlx_import_sheet_headers, country_specific_sample_values)
   response = llm_model.get_response(prompt)
   return response
 
+# This method displays the initial mappings done by the LLM on the UI
 def display_initial_mappings(initial_mappings_json, country_specific_tlx_import_sheet_headers):
-  if 'corrected_mappings' not in st.session_state:
-    st.session_state.corrected_mappings = {}
+    if 'corrected_mappings' not in st.session_state:
+      st.session_state.corrected_mappings = {}
 
   country_specific_tlx_import_sheet_headers = [""] + country_specific_tlx_import_sheet_headers
 
@@ -90,6 +113,7 @@ def display_mapped_data(data, corrected_mappings, headers):
   st.write("Mapped Data:")
   st.dataframe(mapped_data)
 
+# This method generates the mappings for the column data
 def generate_column_dropdown_value_mappings(llm_model, column_name, user_column_values):
   fixed_column_dropdown_values_json = get_column_dropdown_values()
   accepted_column_values = fixed_column_dropdown_values_json[column_name]
@@ -101,9 +125,11 @@ def app(llm_model):
   st.title("Talenox's import sheet mapper")
   uploaded_file = get_uploaded_file()
   # Input field for starting row number
-  rows_to_skip = st.number_input("Enter the number of rows to skip. For example, if your data starts on the 3rd row, then input 2.", min_value=1, value=2)
+  rows_to_skip = st.number_input("Enter the number of rows to skip. For example, if your data starts on the 3rd row, then input 2.", min_value=1, value=1)
   if uploaded_file is not None:
-    sampled_df, raw_data_headers = extract_file_data(uploaded_file, rows_to_skip)
+    sampled_df, raw_data_headers = extract_header_and_sample_data(uploaded_file, rows_to_skip)
+    user_sample_values = extract_unique_sample_values(uploaded_file, rows_to_skip, sheet_name=0)
+    
     st.write("File Uploaded Successfully.")
     st.write(sampled_df)
 
@@ -116,11 +142,12 @@ def app(llm_model):
 
     if st.session_state.confirmed_country:
       country_specific_tlx_import_sheet_headers = get_column_headers(st.session_state.confirmed_country.lower().replace(" ", "_"))
+      country_specific_sample_values = get_sample_values(st.session_state.confirmed_country.lower().replace(" ", "_"))
       if 'initial_mappings' not in st.session_state:
-        # initial_mappings = generate_column_header_mappings(llm_model, raw_data_headers, country_specific_tlx_import_sheet_headers)
-        initial_mappings = '''
-          {  "EmployeeCode": "Employee ID",  "LastName": "Last Name",  "FirstName": "First Name",  "MiddleName": "Nickname (if different from employee first name)",  "EmployeeName": "Statutory Name",  "AliasName": "Chinese Name",  "Gender": "Gender",  "Title": "Job Title",  "NationalityCode": "Nationality",  "BirthDate": "Birth Date (DD/MM/YYYY)",  "BirthPlace": "Passport Place of Issue",  "RaceCode": "Race",  "ReligionCode": "Religion",  "MaritalStatus": "Marital Status",  "MarriageDate": "Marriage Date (Spouse) (DD/MM/YYYY)",  "Email": "Email",  "Funds": "Payment Method",  "MOMOccupationCode": "Role",  "MOMEmployeeType": "Working Day",  "MOMOccupationGroup": "Department",  "MOMCategory": "Location/Branch",  "WorkDaysPerWeek": "Working Day",  "WorkHoursPerDay": "Working Hour",  "WorkHoursPerYear": "Rate of Pay",  "BankAccountNo": "Bank Account No.",  "BankBranch": "Bank Branch No.",  "BankCode": "Bank Type",  "BankCurrencyCode": "Currency of Salary",  "CPFMethodCode": "CPF in lieu",  "CPFEmployeeType": "Rate of Pay",  "FWLCode": "Confirmation Date (DD/MM/YYYY)",  "SFC01": "Overwrite Jobs Array (Ignore current jobs columns)"}
-        '''
+        initial_mappings = generate_column_header_mappings(llm_model, raw_data_headers, user_sample_values, country_specific_tlx_import_sheet_headers, country_specific_sample_values)
+        # initial_mappings = '''
+        #   {  "EmployeeCode": "Employee ID",  "LastName": "Last Name",  "FirstName": "First Name",  "MiddleName": "Nickname (if different from employee first name)",  "AliasName": "Chinese Name",  "Gender": "Gender",  "Title": "Job Title",  "NationalityCode": "Nationality",  "BirthDate": "Birth Date (DD/MM/YYYY)",  "BirthPlace": "Passport Place of Issue",  "RaceCode": "Race",  "ReligionCode": "Religion",  "MaritalStatus": "Marital Status",  "MarriageDate": "Marriage Date (Spouse) (DD/MM/YYYY)",  "Email": "Email",  "Funds": "Payment Method",  "MOMOccupationCode": "Role",  "MOMEmployeeType": "Working Day",  "MOMOccupationGroup": "Department",  "MOMCategory": "Location/Branch",  "WorkDaysPerWeek": "Working Day",  "WorkHoursPerDay": "Working Hour",  "WorkHoursPerYear": "Rate of Pay",  "BankAccountNo": "Bank Account No.",  "BankBranch": "Bank Branch No.",  "BankCode": "Bank Type",  "BankCurrencyCode": "Currency of Salary",  "CPFMethodCode": "CPF in lieu",  "CPFEmployeeType": "Rate of Pay",  "FWLCode": "Confirmation Date (DD/MM/YYYY)",  "SFC01": "Overwrite Jobs Array (Ignore current jobs columns)"}
+        # '''
         initial_mappings_cleaned = initial_mappings.replace('\n', '')
         initial_mappings_json = json.loads(initial_mappings_cleaned)
         st.session_state['initial_mappings'] = initial_mappings_json

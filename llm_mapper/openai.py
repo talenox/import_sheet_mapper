@@ -26,4 +26,5 @@ class OpenAi:
       ],
       model="gpt-3.5-turbo",
     )
+    print(response.choices[0].message.content)
     return response.choices[0].message.content
