@@ -14,7 +14,6 @@ class Gemini(PromptUtils):
 
   def get_response(self, query):
     response = self.model.generate_content(query)
-    print(response.text)
     return response.text
 
 

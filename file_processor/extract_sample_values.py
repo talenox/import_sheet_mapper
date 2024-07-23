@@ -12,8 +12,6 @@ def convert_type(value):
     else:
         return value
 
-
-
 # Read the Excel file
 excel_file = 'sample_data/profiles-employees-export-PricewaterhouseCoopers_LLP-20240523163330 (1).xlsx'  # Replace with your actual file path
 df = pd.read_excel(excel_file, header=2)  # header=1 to read the second row as header (0-indexed)
