@@ -1,56 +1,22 @@
 from openai import OpenAI
 from dotenv import load_dotenv
+import re
 import os
 import json
 import streamlit as st
 import warnings
-from llm_mapper.openai import OpenAiMapper
-from file_processor.file_processor import *
+from llm_mapper.openai import OpenAi
+from llm_mapper.gemini import Gemini
+from file_processor.extractor import *
 from static_data_generator.tlx_column_header_mapper import *
 
 # Load environment variables from .env file
 load_dotenv()
-
-# Get the OpenAI API key from environment variables
-api_key = os.environ.get("OPENAI_API_KEY")
-if not api_key:
-  raise ValueError("OpenAI API key is not set. Please check your .env file.")
-
 # Suppress openpyxl warnings
 warnings.filterwarnings("ignore", category=UserWarning, module="openpyxl")
 
 ####################################################
 COUNTRY_OPTIONS = ['SINGAPORE', 'MALAYSIA', 'HONG KONG', 'INDONESIA', 'GLOBAL']
-
-# This method extracts a list of header column names and some sample data for display purposes
-def extract_header_and_sample_data(uploaded_file, rows_to_skip):
-  if uploaded_file.name.endswith('.csv'):
-      sampled_df = read_csv_and_sample(uploaded_file)
-      raw_data_headers = extract_headers_from_csv(uploaded_file)
-  else:
-    sampled_df = read_excel_and_sample(uploaded_file, rows_to_skip)
-    raw_data_headers = extract_headers_from_excel_file(uploaded_file, rows_to_skip)
-  
-  return sampled_df, raw_data_headers
-
-# This method extracts unique values for each column in the sheet and packs it up into a json to feed into the LLM prompt
-def extract_unique_sample_values(uploaded_file, rows_to_skip, sheet_name=0):
-  df = pd.read_excel(uploaded_file, sheet_name=sheet_name, skiprows=rows_to_skip)
-  # Initialize dictionary to store sampled data lists
-  sampled_data = {}
-
-  # Iterate over columns in the DataFrame
-  for col in df.columns:
-    # Get unique non-NaN values from the column
-    unique_values = df[col].dropna().unique()[:2].tolist()
-    # Add to sampled_data if there are unique values
-    if unique_values:
-      sampled_data[col] = unique_values
-
-  # Convert dictionary to JSON string with 2-space indentation
-  sample_data = json.dumps(sampled_data, ensure_ascii=False, indent=2)
-  
-  return sample_data
 
 # This method calls the LLM to create mappings based on the given column names and their data
 def generate_column_header_mappings(llm_model, raw_data_headers, raw_sample_values, country_specific_tlx_import_sheet_headers, country_specific_sample_values):
@@ -60,37 +26,38 @@ def generate_column_header_mappings(llm_model, raw_data_headers, raw_sample_valu
 
 # This method displays the initial mappings done by the LLM on the UI
 def display_initial_mappings(initial_mappings_json, country_specific_tlx_import_sheet_headers):
-    if 'corrected_mappings' not in st.session_state:
-      st.session_state.corrected_mappings = {}
+  if 'corrected_mappings' not in st.session_state:
+    st.session_state.corrected_mappings = {}
 
-    country_specific_tlx_import_sheet_headers = [""] + country_specific_tlx_import_sheet_headers
+  country_specific_tlx_import_sheet_headers = [""] + country_specific_tlx_import_sheet_headers
 
-    def create_input_and_selectbox(header, value, index, key, highlight=False):
-      col1, col2 = st.columns([3, 3])
-      with col1:
-        user_header_input = st.text_input(f"User Header for '{header}':", header, disabled=True)
-      with col2:
-        if highlight:
-          corrected = st.selectbox(f"Predefined Header for '{header}':", country_specific_tlx_import_sheet_headers, index=index, key=key, format_func=lambda x: f'🔴 {x}' if x == value else x)
-        else:
-          corrected = st.selectbox(f"Predefined Header for '{header}':", country_specific_tlx_import_sheet_headers, index=index, key=key)
-      return user_header_input, corrected
-
-    key = 0
-    for user_header, initial_map in initial_mappings_json.items():
-      if user_header == "Suggestion" and isinstance(initial_map, dict):
-        for suggestion_header, suggestion_value in initial_map.items():
-          initial_index = country_specific_tlx_import_sheet_headers.index(suggestion_value) if suggestion_value in country_specific_tlx_import_sheet_headers else 0
-          user_header_input, corrected = create_input_and_selectbox(suggestion_header, suggestion_value, initial_index, key, highlight=True)
-          st.session_state.corrected_mappings[user_header_input] = corrected
-          key += 1
+  def create_input_and_selectbox(header, value, index, key, highlight=False):
+    col1, col2 = st.columns([3, 3])
+    with col1:
+      user_header_input = st.text_input(f"User Header for '{header}':", header, disabled=True, key=f"user_defined_header_{key}")
+    with col2:
+      if highlight:   # For suggested mappings
+        corrected = st.selectbox(f"Predefined Header for '{header}':", country_specific_tlx_import_sheet_headers, index=index, key=key, format_func=lambda x: f'🔴 {x}' if x == value['column'] else x)
+        st.text(f"{value['explanation']}")
       else:
-        initial_index = country_specific_tlx_import_sheet_headers.index(initial_map) if initial_map in country_specific_tlx_import_sheet_headers else 0
-        user_header_input, corrected = create_input_and_selectbox(user_header, initial_map, initial_index, key)
+        corrected = st.selectbox(f"Predefined Header for '{header}':", country_specific_tlx_import_sheet_headers, index=index, key=key)
+    return user_header_input, corrected
+
+  key = 0
+  for user_header, initial_map in initial_mappings_json.items():
+    if user_header.lower() in ["suggestion", "suggestions"] and isinstance(initial_map, dict):
+      for suggestion_header, suggestion_value in initial_map.items():
+        index = country_specific_tlx_import_sheet_headers.index(suggestion_value['column']) if suggestion_value['column'] in country_specific_tlx_import_sheet_headers else 0
+        user_header_input, corrected = create_input_and_selectbox(suggestion_header, suggestion_value, index, key, highlight=True)
         st.session_state.corrected_mappings[user_header_input] = corrected
         key += 1
+    else:
+      index = country_specific_tlx_import_sheet_headers.index(initial_map) if initial_map in country_specific_tlx_import_sheet_headers else 0
+      user_header_input, corrected = create_input_and_selectbox(user_header, initial_map, index, key)
+      st.session_state.corrected_mappings[user_header_input] = corrected
+      key += 1
 
-    return st.session_state.corrected_mappings
+  return st.session_state.corrected_mappings
 
 # This method displays the final mappings done by the LLM and corrected by the user on the UI
 def display_mapped_data(data, corrected_mappings, headers):
@@ -103,7 +70,8 @@ def display_mapped_data(data, corrected_mappings, headers):
     # Only map if the source column exists in data and target column is in headers
     if source_col in data.columns and target_col in headers:
       if target_col.lower() in fixed_value_columns:
-        data_mappings = json.loads(generate_column_dropdown_value_mappings(llm_model, target_col.lower(), data[source_col].unique()))
+        output = generate_column_dropdown_value_mappings(llm_model, target_col.lower(), data[source_col].unique())
+        data_mappings = sanitise_output(output)
         # Replace the values in the user's sheet with what it was mapped to
         mapped_data[target_col] = data[source_col].apply(lambda x: data_mappings.get(x, x) if data_mappings.get(x, x) else x)
       else:
@@ -116,6 +84,23 @@ def display_mapped_data(data, corrected_mappings, headers):
   # Display the mapped data in a DataFrame
   st.write("Mapped Data:")
   st.dataframe(mapped_data)
+
+def sanitise_output(output):
+  # Regex pattern to match JSON object
+  pattern = re.compile(r'({.*?})', re.DOTALL)
+  match = pattern.search(output)
+  
+  if match:
+    # Extract the JSON object string
+    json_str = match.group(1)
+    # Convert the JSON string to a Python dictionary
+    try:
+      json_obj = json.loads(json_str)
+      return json_obj
+    except json.JSONDecodeError as e:
+      return None
+  else:
+    return None
 
 # This method generates the mappings for the column data
 def generate_column_dropdown_value_mappings(llm_model, column_name, user_column_values):
@@ -150,7 +135,122 @@ def app(llm_model):
       if 'initial_mappings' not in st.session_state:
         initial_mappings = generate_column_header_mappings(llm_model, raw_data_headers, user_sample_values, country_specific_tlx_import_sheet_headers, country_specific_sample_values)
         # initial_mappings = '''
-        #   {  "EmployeeCode": "Employee ID",  "LastName": "Last Name",  "FirstName": "First Name",  "MiddleName": "Nickname (if different from employee first name)",  "AliasName": "Chinese Name",  "Gender": "Gender",  "Title": "Job Title",  "NationalityCode": "Nationality",  "BirthDate": "Birth Date (DD/MM/YYYY)",  "BirthPlace": "Passport Place of Issue",  "RaceCode": "Race",  "ReligionCode": "Religion",  "MaritalStatus": "Marital Status",  "MarriageDate": "Marriage Date (Spouse) (DD/MM/YYYY)",  "Email": "Email",  "Funds": "Payment Method",  "MOMOccupationCode": "Role",  "MOMEmployeeType": "Working Day",  "MOMOccupationGroup": "Department",  "MOMCategory": "Location/Branch",  "WorkDaysPerWeek": "Working Day",  "WorkHoursPerDay": "Working Hour",  "WorkHoursPerYear": "Rate of Pay",  "BankAccountNo": "Bank Account No.",  "BankBranch": "Bank Branch No.",  "BankCode": "Bank Type",  "BankCurrencyCode": "Currency of Salary",  "CPFMethodCode": "CPF in lieu",  "CPFEmployeeType": "Rate of Pay",  "FWLCode": "Confirmation Date (DD/MM/YYYY)",  "SFC01": "Overwrite Jobs Array (Ignore current jobs columns)"}
+        #   {
+        #     "Employee ID": "Employee ID",
+        #     "First Name*": "First Name",
+        #     "Last Name*": "Last Name",
+        #     "Nickname": "Nickname",
+        #     "Chinese Name": "Chinese Name",
+        #     "Email": "Email",
+        #     "Invite User*": "Invite User",
+        #     "User Email (if different from employee email)": "User Email (if different from employee email)",
+        #     "Access Role": "Access Role",
+        #     "My Profile Module": "My Profile Module",
+        #     "Payslip Module": "Payslip Module",
+        #     "Tax Module": "Tax Module",
+        #     "Leave Module": "Leave Module",
+        #     "Payroll Module": "Payroll Module",
+        #     "Profile Module": "Profile Module",
+        #     "Claims Module (User)": "Claims Module (User)",
+        #     "Claims Module (Admin)": "Claims Module (Admin)",
+        #     "Birth Date (DD/MM/YYYY)*": "Birth Date (DD/MM/YYYY)",
+        #     "Gender": "Gender",
+        #     "Marital Status": "Marital Status",
+        #     "Identification No*": "Identification No",
+        #     "Immigration Status*": "Immigration Status",
+        #     "PR Status": "PR Status",
+        #     "PR Effective Date (DD/MM/YYYY)": "PR Effective Date (DD/MM/YYYY)",
+        #     "S Pass Issue Date (DD/MM/YYYY)": "S Pass Issue Date (DD/MM/YYYY)",
+        #     "S Pass Expiry Date (DD/MM/YYYY)": "S Pass Expiry Date (DD/MM/YYYY)",
+        #     "S Pass Dependency Ceiling": "S Pass Dependency Ceiling",
+        #     "E Pass Issue Date (DD/MM/YYYY)": "E Pass Issue Date (DD/MM/YYYY)",
+        #     "E Pass Expiry Date (DD/MM/YYYY)": "E Pass Expiry Date (DD/MM/YYYY)",
+        #     "Letter of Consent Issue Date (DD/MM/YYYY)": "Letter of Consent Issue Date (DD/MM/YYYY)",
+        #     "Letter of Consent Expiry Date (DD/MM/YYYY)": "Letter of Consent Expiry Date (DD/MM/YYYY)",
+        #     "Personalised Employment Pass Issue Date (DD/MM/YYYY)": "Personalised Employment Pass Issue Date (DD/MM/YYYY)",
+        #     "Personalised Employment Pass Expiry Date (DD/MM/YYYY)": "Personalised Employment Pass Expiry Date (DD/MM/YYYY)",
+        #     "Work Pass Number": "Work Pass Number",
+        #     "Work Pass Issue Date (DD/MM/YYYY)": "Work Pass Issue Date (DD/MM/YYYY)",
+        #     "Work Pass Expiry Date (DD/MM/YYYY)": "Work Pass Expiry Date (DD/MM/YYYY)",
+        #     "Work Pass Dependency Ceiling": "Work Pass Dependency Ceiling",
+        #     "Work Pass Worker Category": "Work Pass Worker Category",
+        #     "Tech Pass Issue Date (DD/MM/YYYY)": "Tech Pass Issue Date (DD/MM/YYYY)",
+        #     "Tech Pass Expiry Date (DD/MM/YYYY)": "Tech Pass Expiry Date (DD/MM/YYYY)",
+        #     "ONE Pass Issue Date (DD/MM/YYYY)": "ONE Pass Issue Date (DD/MM/YYYY)",
+        #     "ONE Pass Expiry Date (DD/MM/YYYY)": "ONE Pass Expiry Date (DD/MM/YYYY)",
+        #     "Training Employment Pass Issue Date (DD/MM/YYYY)": "Training Employment Pass Issue Date (DD/MM/YYYY)",
+        #     "Training Employment Pass Expiry Date (DD/MM/YYYY)": "Training Employment Pass Expiry Date (DD/MM/YYYY)",
+        #     "Training Work Permit Issue Date (DD/MM/YYYY)": "Training Work Permit Issue Date (DD/MM/YYYY)",
+        #     "Training Work Permit Expiry Date (DD/MM/YYYY)": "Training Work Permit Expiry Date (DD/MM/YYYY)",
+        #     "Identification Issue Date (DD/MM/YYYY)": "Identification Issue Date (DD/MM/YYYY)",
+        #     "Identification Expiry Date (DD/MM/YYYY)": "Identification Expiry Date (DD/MM/YYYY)",
+        #     "Passport No": "Passport No.",
+        #     "Passport Date of Issue (DD/MM/YYYY)": "Passport Date of Issue (DD/MM/YYYY)",
+        #     "Passport Date of Expiry (DD/MM/YYYY)": "Passport Date of Expiry (DD/MM/YYYY)",
+        #     "Passport Place of Issue": "Passport Place of Issue",
+        #     "Nationality": "Nationality",
+        #     "Race": "Race",
+        #     "Religion": "Religion",
+        #     "Job Title": "Job Title",
+        #     "Hired Date (DD/MM/YYYY)*": "Hired Date (DD/MM/YYYY)",
+        #     "Job Start Date (DD/MM/YYYY)": "Job Start Date (DD/MM/YYYY)",
+        #     "Department": "Department",
+        #     "Location/Branch": "Location/Branch",
+        #     "Default Cost Centre": "Default Cost Centre",
+        #     "Role": "Role",
+        #     "Confirmation Date (DD/MM/YYYY)": "Confirmation Date (DD/MM/YYYY)",
+        #     "Working Day*": "Working Day",
+        #     "Working Hour*": "Working Hour",
+        #     "Rate of Pay*": "Rate of Pay",
+        #     "Currency of Salary*": "Currency of Salary",
+        #     "Basic Salary*": "Basic Salary",
+        #     "Designation in Accounting Software": "Designation in Accounting Software",
+        #     "Job Remarks": "Job Remarks",
+        #     "Resign Date (DD/MM/YYYY)": "Resign Date (DD/MM/YYYY)",
+        #     "Payment Method*": "Payment Method",
+        #     "Bank Type": "Bank Type",
+        #     "Bank Account Holders Name": "Bank Account Holder's Name",
+        #     "Bank Account No.": "Bank Account No.",
+        #     "Bank Branch No.": "Bank Branch No.",
+        #     "SHG Automation*": "Automatically calculate SHG",
+        #     "SHG Contribution*": "SHG Contribution",
+        #     "Additional SHG Contribution*": "Additional SHG Contribution",
+        #     "Contact Number": "Contact Number",
+        #     "Office Direct Inward Dialing (DID) Number": "Office Direct Inward Dialing (DID) Number",
+        #     "Address Line 1": "Address Line 1",
+        #     "Country": "Country",
+        #     "Region": "Region",
+        #     "Subregion": "Subregion",
+        #     "Postal Code": "Postal Code",
+        #     "Next of Kins Name": "Next of Kin's Name",
+        #     "Next of Kins Nationality": "Next of Kin's Nationality",
+        #     "Next of Kins Gender": "Next of Kin's Gender",
+        #     "Next of Kins Birth Date (DD/MM/YYYY)": "Next of Kin's Birth Date (DD/MM/YYYY)",
+        #     "Next of Kins Identification No": "Next of Kin's Identification No.",
+        #     "Next of Kins Passport No": "Next of Kin's Passport No.",
+        #     "Next of Kins Relationship": "Next of Kin's Relationship",
+        #     "Next of Kins Marriage Date (Spouse) (DD/MM/YYYY)": "Next of Kin's Marriage Date (Spouse) (DD/MM/YYYY)",
+        #     "Next of Kins Contact No": "Next of Kin's Contact No.",
+        #     "Covid-19 Vaccination Status": "Covid-19 Vaccination Status",
+        #     "Covid-19 Vaccine Brand": "Covid-19 Vaccine Brand",
+        #     "Date of 1st Dose (DD/MM/YYYY)": "Date of 1st Dose (DD/MM/YYYY)",
+        #     "Date of 2nd Dose (DD/MM/YYYY)": "Date of 2nd Dose (DD/MM/YYYY)",
+        #     "Covid-19 Vaccine Booster Brand": "Covid-19 Vaccine Booster Brand",
+        #     "Date of Booster Dose (DD/MM/YYYY)": "Date of Booster Dose (DD/MM/YYYY)",
+        #     "Vaccination Remarks": "Vaccination Remarks",
+        #     "Halal Certification Issue Date (DD/MM/YYYY)": "Halal Certification Issue Date (DD/MM/YYYY)",
+        #     "Halal Certification Expiry Date (DD/MM/YYYY)": "Halal Certification Expiry Date (DD/MM/YYYY)",
+        #     "Hygiene Certification Issue Date (DD/MM/YYYY)": "Hygiene Certification Issue Date (DD/MM/YYYY)",
+        #     "Hygiene Certification Expiry Date (DD/MM/YYYY)": "Hygiene Certification Expiry Date (DD/MM/YYYY)",
+        #     "Workday Import Fields": "Custom Fields Hash",
+        #     "asd": "Overwrite Jobs Array (Ignore current jobs columns)",
+        #     "Suggestion": {
+        #       "Position": {
+        #         "column": "Job Title",
+        #         "explanation": "based on the sample values and contextual meaning"
+        #       }
+        #     }
+        #   }
         # '''
         initial_mappings_cleaned = initial_mappings.replace('\n', '')
         initial_mappings_json = json.loads(initial_mappings_cleaned)
@@ -173,9 +273,8 @@ def app(llm_model):
 if __name__ == "__main__":
   # st.session_state.clear()
   # Initialize the OpenAI client
-  client = OpenAI(
-    # This is the default and can be omitted
-    api_key=api_key,
-  )
-  llm_model = OpenAiMapper(client)
+  # llm_model = OpenAi()
+  
+  # Initialize the Gemini client
+  llm_model = Gemini()
   app(llm_model)
