@@ -16,28 +16,28 @@ def display_initial_mappings(initial_mappings_json, country_specific_tlx_import_
   confirmed_headers = {k: v for k, v in initial_mappings_json.items() if not isinstance(v, dict) and v is not None}
   unmapped_headers = {k: v for k, v in initial_mappings_json.items() if v is None}
   if len(unmapped_headers) > 0:
-    st.markdown("## :red_circle: Unmapped Headers")
-    for user_header, unmapped_header in unmapped_headers.items():
-      user_header_input, corrected = create_input_and_selectbox(country_specific_tlx_import_sheet_headers, user_header, unmapped_header, 0, key)
-      st.session_state.corrected_mappings[user_header_input] = corrected
-      key += 1
-  
-  if len(suggested_headers) > 0:
-    st.markdown("## 🟠 Suggested Headers")
-    for _, suggested_mappings in suggested_headers.items():
-      for user_header, suggestion_header in suggested_mappings.items():
-        index = country_specific_tlx_import_sheet_headers.index(suggestion_header['column']) if suggestion_header['column'] in country_specific_tlx_import_sheet_headers else 0
-        user_header_input, corrected = create_input_and_selectbox(country_specific_tlx_import_sheet_headers, suggestion_header, suggestion_header, index, key, highlight=True)
+    with st.expander("🔴 Unmapped Headers", expanded=True):
+      for user_header, unmapped_header in unmapped_headers.items():
+        user_header_input, corrected = create_input_and_selectbox(country_specific_tlx_import_sheet_headers, user_header, unmapped_header, 0, key)
         st.session_state.corrected_mappings[user_header_input] = corrected
         key += 1
+  
+  if len(suggested_headers) > 0:
+    with st.expander("🟠 Suggested Headers", expanded=True):
+      for _, suggested_mappings in suggested_headers.items():
+        for user_header, suggestion_header in suggested_mappings.items():
+          index = country_specific_tlx_import_sheet_headers.index(suggestion_header['column']) if suggestion_header['column'] in country_specific_tlx_import_sheet_headers else 0
+          user_header_input, corrected = create_input_and_selectbox(country_specific_tlx_import_sheet_headers, suggestion_header, suggestion_header, index, key, highlight=True)
+          st.session_state.corrected_mappings[user_header_input] = corrected
+          key += 1
 
   if len(confirmed_headers) > 0:
-    st.markdown("## Confirmed Mappings")
-    for user_header, mapped_header in confirmed_headers.items():
-      index = country_specific_tlx_import_sheet_headers.index(mapped_header) if mapped_header in country_specific_tlx_import_sheet_headers else 0
-      user_header_input, corrected = create_input_and_selectbox(country_specific_tlx_import_sheet_headers, user_header, mapped_header, index, key)
-      st.session_state.corrected_mappings[user_header_input] = corrected
-      key += 1
+    with st.expander("🟢 Confirmed Mappings", expanded=False):
+      for user_header, mapped_header in confirmed_headers.items():
+        index = country_specific_tlx_import_sheet_headers.index(mapped_header) if mapped_header in country_specific_tlx_import_sheet_headers else 0
+        user_header_input, corrected = create_input_and_selectbox(country_specific_tlx_import_sheet_headers, user_header, mapped_header, index, key)
+        st.session_state.corrected_mappings[user_header_input] = corrected
+        key += 1
 
   return st.session_state.corrected_mappings
 
