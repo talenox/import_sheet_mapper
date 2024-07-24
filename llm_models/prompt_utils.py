@@ -11,7 +11,7 @@ class PromptUtils:
     @staticmethod
     def create_column_header_mapping_prompt(raw_data_headers, raw_sample_values, tlx_import_sheet_headers, country_specific_sample_values, prompt_file='base_prompt.txt'):
         script_dir = os.path.dirname(os.path.abspath(__file__))
-        directory_path = os.path.join(script_dir, f'../sample_prompts/{prompt_file}')
+        directory_path = os.path.join(script_dir, f'../data/sample_prompts/{prompt_file}')
         # Open the file and read its content
         with open(directory_path, 'r') as file:
             prompt_text = file.read()
@@ -29,7 +29,7 @@ class PromptUtils:
     @staticmethod
     def create_column_value_mapping_prompt(user_input_column_values, tlx_column_accepted_values, prompt_file='column_dropdown_value_mapping_prompt.txt'):
         script_dir = os.path.dirname(os.path.abspath(__file__))
-        directory_path = os.path.join(script_dir, f'../sample_prompts/{prompt_file}')
+        directory_path = os.path.join(script_dir, f'../data/sample_prompts/{prompt_file}')
         # Open the file and read its content
         with open(directory_path, 'r') as file:
             prompt_text = file.read()
