@@ -515,7 +515,7 @@ def update_column_headers(version):
 def get_column_headers(country="singapore"):
   # Define the directory path relative to this script's location
   script_dir = os.path.dirname(os.path.abspath(__file__))
-  directory_path = os.path.join(script_dir, '../tlx_column_headers')
+  directory_path = os.path.join(script_dir, '../data/tlx_column_headers')
   # Get a list of directories (dates)
   dates = [entry for entry in os.listdir(directory_path) if os.path.isdir(os.path.join(directory_path, entry))]
   # Parse dates into datetime objects
@@ -542,7 +542,7 @@ def get_column_headers(country="singapore"):
 def get_column_dropdown_values():
   # Define the directory path relative to this script's location
   script_dir = os.path.dirname(os.path.abspath(__file__))
-  directory_path = os.path.join(script_dir, '../tlx_column_headers')
+  directory_path = os.path.join(script_dir, '../data/tlx_column_headers')
   # Get a list of directories (dates)
   dates = [entry for entry in os.listdir(directory_path) if os.path.isdir(os.path.join(directory_path, entry))]
   # Parse dates into datetime objects
@@ -566,7 +566,7 @@ def get_column_dropdown_values():
 def get_sample_values(country="singapore"):
   # Define the directory path relative to this script's location
   script_dir = os.path.dirname(os.path.abspath(__file__))
-  directory_path = os.path.join(script_dir, '../tlx_column_headers')
+  directory_path = os.path.join(script_dir, '../data/tlx_column_headers')
   
   # Get a list of directories (dates)
   dates = [entry for entry in os.listdir(directory_path) if os.path.isdir(os.path.join(directory_path, entry))]
