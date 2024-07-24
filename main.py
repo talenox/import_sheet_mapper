@@ -76,7 +76,7 @@ def app(llm_model):
           "FWLCode": null,
           "Suggestion": {
             "SCF01": {
-              "column": "Mailing Address",
+              "column": "Chinese Name",
               "explanation": "based on the context of providing an address"
             }
           }
@@ -92,10 +92,12 @@ def app(llm_model):
       corrected_mappings = display_initial_mappings(initial_mappings_json, country_specific_tlx_import_sheet_headers)
 
       if st.button("Submit Mappings"):
-        st.write("Final Corrected Mappings:", corrected_mappings)
+        st.write("Corrected Mappings:", corrected_mappings)
+        # Here i want to call output = generate_column_dropdown_value_mappings(llm_model, target_col.lower(), data[source_col].unique())
+        data_mappings = sanitise_output(output)
         # Read the uploaded file again to get the full data
         data = pd.read_excel(uploaded_file, skiprows=rows_to_skip)
-        display_mapped_data(llm_model, data, st.session_state.corrected_mappings, country_specific_tlx_import_sheet_headers[1:])
+        display_final_mapped_data(llm_model, data, st.session_state.corrected_mappings, country_specific_tlx_import_sheet_headers[1:])
 
         # Write to the preformatted file
         # write_to_preformatted_excel(data, corrected_mappings, country_specific_tlx_import_sheet_headers[1:], st.session_state.confirmed_country)

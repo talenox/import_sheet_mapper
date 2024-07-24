@@ -27,7 +27,7 @@ def display_initial_mappings(initial_mappings_json, country_specific_tlx_import_
       for _, suggested_mappings in suggested_headers.items():
         for user_header, suggestion_header in suggested_mappings.items():
           index = country_specific_tlx_import_sheet_headers.index(suggestion_header['column']) if suggestion_header['column'] in country_specific_tlx_import_sheet_headers else 0
-          user_header_input, corrected = create_input_and_selectbox(country_specific_tlx_import_sheet_headers, suggestion_header, suggestion_header, index, key, highlight=True)
+          user_header_input, corrected = create_input_and_selectbox(country_specific_tlx_import_sheet_headers, user_header, suggestion_header, index, key, suggestion=True)
           st.session_state.corrected_mappings[user_header_input] = corrected
           key += 1
 
@@ -42,20 +42,18 @@ def display_initial_mappings(initial_mappings_json, country_specific_tlx_import_
   return st.session_state.corrected_mappings
 
 # This method creates the boxes to display the mappings
-def create_input_and_selectbox(country_specific_tlx_import_sheet_headers, header, value, index, key, highlight=False):
+def create_input_and_selectbox(country_specific_tlx_import_sheet_headers, header, mapped_header, index, key, suggestion=False):
     col1, col2 = st.columns([3, 3])
     with col1:
-      user_header_input = st.text_input(f"User Header for '{header}':", header, disabled=True, key=f"user_defined_header_{key}")
+      user_header_input = st.text_input("Label", header, disabled=True, key=f"user_defined_header_{key}", label_visibility="hidden")
     with col2:
-      if highlight:   # For suggested mappings
-        corrected = st.selectbox(f"Talenox Header for '{header}':", country_specific_tlx_import_sheet_headers, index=index, key=key, format_func=lambda x: f'🔴 {x}' if x == value['column'] else x)
-        st.text(f"{value['explanation']}")
-      else:
-        corrected = st.selectbox(f"Talenox Header for '{header}':", country_specific_tlx_import_sheet_headers, index=index, key=key)
+      corrected = st.selectbox("Label", country_specific_tlx_import_sheet_headers, index=index, key=key, label_visibility="hidden")
+    if suggestion:
+      st.text(f"{mapped_header['explanation']}")
     return user_header_input, corrected
 
 # This method displays the final mappings done by the LLM and corrected by the user on the UI
-def display_mapped_data(llm_model, data, corrected_mappings, headers):
+def display_final_mapped_data(llm_model, data, corrected_mappings, headers):
   fixed_value_columns = get_column_dropdown_values().keys()
   # Initialize an empty DataFrame with the specified headers
   mapped_data = pd.DataFrame(columns=headers)
