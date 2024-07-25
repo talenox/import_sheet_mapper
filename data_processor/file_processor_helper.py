@@ -5,10 +5,6 @@ from openpyxl import load_workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
 import shutil
 
-def get_uploaded_file():
-  uploaded_file = st.file_uploader("Upload the file containing your data.", type=["xlsx", "xls"])
-  return uploaded_file
-
 # Read the Excel file and sample rows of data
 def read_excel_and_sample(filename, rows_to_skip, sheet_name=0, max_rows=10):
   # Read the entire Excel file

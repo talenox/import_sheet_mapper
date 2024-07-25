@@ -58,20 +58,18 @@ def create_input_and_selectbox(fixed_values, header, mapped_value, index, key, s
 
 # TODO: Joshua update this
 # This method displays the final mappings done by the LLM and corrected by the user on the UI
-def display_final_mapped_data(llm_model, data, corrected_mappings, headers):
-  fixed_value_columns = get_tlx_column_dropdown_values().keys()
+def display_final_mapped_data(llm_model, data, corrected_column_mappings, headers, corrected_value_mappings):
+  fixed_value_columns = corrected_value_mappings.keys()
   # Initialize an empty DataFrame with the specified headers
   mapped_data = pd.DataFrame(columns=headers)
 
   # Loop through mappings and populate the mapped_data DataFrame
-  for source_col, target_col in corrected_mappings.items():
+  for source_col, target_col in corrected_column_mappings.items():
     # Only map if the source column exists in data and target column is in headers
     if source_col in data.columns and target_col in headers:
-      if target_col.lower() in fixed_value_columns:
-        output = generate_fixed_value_column_mappings(llm_model, target_col.lower(), data[source_col].unique())
-        data_mappings = sanitise_output(output)
+      if target_col in fixed_value_columns:
         # Replace the values in the user's sheet with what it was mapped to
-        mapped_data[target_col] = data[source_col].apply(lambda x: data_mappings.get(x, x) if data_mappings.get(x, x) else x)
+        mapped_data[target_col] = data[source_col].apply(lambda x: corrected_value_mappings[target_col].get(x, x) if corrected_value_mappings[target_col].get(x, x) else x)
       else:
         mapped_data[target_col] = data[source_col]
   # Ensure all required headers are present, fill missing with empty strings
