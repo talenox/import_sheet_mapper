@@ -21,6 +21,7 @@ COUNTRY_OPTIONS = ['SINGAPORE', 'MALAYSIA', 'HONG KONG', 'INDONESIA', 'GLOBAL']
 def app(llm_model):
   st.title("Talenox's import sheet mapper")
   # Step 1: Upload file
+  st.subheader("Choose a file")
   uploaded_file = get_uploaded_file()
   # Step 2: Check that the file has been read correctly
   rows_to_skip = st.number_input("Enter the number of rows to skip. For example, if your data starts on the 3rd row, then input 2.", min_value=1, value=1)
@@ -32,7 +33,8 @@ def app(llm_model):
     # Step 3: Choose country
     if 'confirmed_country' not in st.session_state:
       st.session_state.confirmed_country = None
-    country = st.selectbox("Select Country:", options=COUNTRY_OPTIONS)
+    st.subheader("Select Country")
+    country = st.selectbox("Talenox has a differently formatted import sheet for each country.", options=COUNTRY_OPTIONS)
     # Step 4: Confirm country
     if st.button("Confirm Country"):
       st.session_state.confirmed_country = country
@@ -88,22 +90,26 @@ def app(llm_model):
       else:
         initial_mappings_json = st.session_state['initial_mappings']
       # Step 6: Review proposed column header mappings by the LLM
+      st.header("Column Header Mappings")
       st.write("Please review and modify (if necessary) the proposed mappings:")
-      corrected_mappings = display_initial_mappings(initial_mappings_json, country_specific_tlx_import_sheet_headers)
+      corrected_column_mappings = display_initial_mappings(initial_mappings_json, country_specific_tlx_import_sheet_headers, "corrected_column_mappings")
       # Step 7: Submit confirmed header mappings
-      if st.button("Submit Mappings"):
-        with st.expander("Corrected Mappings:", expanded=False):
-          st.write("", corrected_mappings)
+      if st.button("Submit Column Mappings"):
+        st.write("Here are the confirmed column mappings.")
+        with st.expander("Corrected Column Mappings:", expanded=False):
+          st.write("", corrected_column_mappings)
         # Step 8: Generate value mapping based on column mappings
         data = pd.read_excel(uploaded_file, skiprows=rows_to_skip)
         fixed_column_values = get_tlx_column_dropdown_values()
-        for user_column, tlx_column in corrected_mappings.items():
+        st.header("Column Value Mappings")
+        for user_column, tlx_column in corrected_column_mappings.items():
           if tlx_column.lower() in fixed_column_values:
             accepted_column_values = fixed_column_values[tlx_column.lower()]
             initial_value_mappings = generate_fixed_value_column_mappings(llm_model, data[user_column].unique().tolist(), accepted_column_values)
             # Step 9: Review value mappings for each of the columns
+            st.subheader(f"{tlx_column}")
             st.write("Please review and modify (if necessary) the proposed mappings:")
-            corrected_mappings = display_initial_mappings(initial_value_mappings, accepted_column_values)
+            corrected_value_mappings = display_initial_mappings(initial_value_mappings, accepted_column_values, f"{tlx_column}_corrected_value_mappings")
             
         # # Read the uploaded file again to get the full data
         # data = pd.read_excel(uploaded_file, skiprows=rows_to_skip)

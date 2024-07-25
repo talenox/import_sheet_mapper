@@ -7,9 +7,7 @@ from data_generator.tlx_column_header_mapper import *
 from helper_methods.mapper import *
 
 # This method displays the initial mappings done by the LLM on the UI
-def display_initial_mappings(initial_mappings_json, fixed_values, is_value_mapping=False):
-  session_key = 'corrected_value_mappings' if is_value_mapping else 'corrected_mappings'
-  
+def display_initial_mappings(initial_mappings_json, fixed_values, session_key):
   if session_key not in st.session_state:
     st.session_state[session_key] = {}
     
