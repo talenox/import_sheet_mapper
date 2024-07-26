@@ -8,7 +8,7 @@ from llm_models.gemini import Gemini
 from data_processor.extractor import *
 from data_generator.tlx_column_header_mapper import *
 from helper_methods.mapper import *
-from helper_methods.display import *
+from helper_methods.display_mappings import *
 
 # Load environment variables from .env file
 load_dotenv()
@@ -18,166 +18,179 @@ warnings.filterwarnings("ignore", category=UserWarning, module="openpyxl")
 ####################################################
 COUNTRY_OPTIONS = ['SINGAPORE', 'MALAYSIA', 'HONG KONG', 'INDONESIA', 'GLOBAL']
 
+def initialise_session_state_variables():
+  if 'submit_column_header_mappings' not in st.session_state:
+    st.session_state.submit_column_header_mappings = None
+  if 'confirmed_country' not in st.session_state:
+    st.session_state.confirmed_country = None
+  if 'populate_import_sheet' not in st.session_state:
+    st.session_state.populate_import_sheet = None
+  if 'corrected_column_mappings' not in st.session_state:
+    st.session_state.corrected_column_mappings = {}
+  st.session_state['consolidated_intial_value_mappings'] = {}
+  st.session_state['consolidated_corrected_value_mappings'] = {}
+
+def render_upload_file_widget():
+  st.subheader("Choose a file")
+  return st.file_uploader("Upload the file containing your data.", type=["xlsx", "xls"])
+
+def render_sheet_skiprow_widget():
+    rows_to_skip = st.number_input("Enter the number of rows to skip. For example, if your data starts on the 3rd row, then input 2.", min_value=1, value=1)
+    return rows_to_skip
+
+def render_uploaded_file_head_widget(sampled_df):
+  st.write("File Uploaded Successfully.")
+  st.write(sampled_df)
+
+def render_select_country_widget():
+  st.subheader("Select Country")
+  country = st.selectbox("Talenox has a differently formatted import sheet for each country.", options=COUNTRY_OPTIONS)
+  return country
+
+def render_confirm_country_button(country):
+  if st.button("Confirm Country"):
+    st.session_state.confirmed_country = country
+
+def generate_column_header_mappings(llm_model, raw_data_headers, user_sample_values, country_specific_tlx_import_sheet_headers):
+  country_specific_sample_values = get_sample_values(st.session_state.confirmed_country.lower().replace(" ", "_"))
+  if 'initial_mappings' not in st.session_state:
+    # initial_mappings = generate_column_header_mappings(llm_model, raw_data_headers, user_sample_values, country_specific_tlx_import_sheet_headers, country_specific_sample_values)
+    initial_mappings = '''{
+      "EmployeeCode": "Employee ID",
+      "LastName": "Last Name",
+      "FirstName": "First Name",
+      "MiddleName": null,
+      "EmployeeName": null,
+      "AliasName": "Nickname",
+      "Gender": "Gender",
+      "Title": null,
+      "NationalityCode": "Nationality",
+      "BirthDate": "Birth Date (DD/MM/YYYY)",
+      "BirthPlace": null,
+      "RaceCode": "Race",
+      "ReligionCode": "Religion",
+      "MaritalStatus": "Marital Status",
+      "MarriageDate": null,
+      "Email": "Email",
+      "Funds": null,
+      "MOMOccupationCode": null,
+      "MOMEmployeeType": null,
+      "MOMOccupationGroup": null,
+      "MOMCategory": null,
+      "WorkDaysPerWeek": "Working Day",
+      "WorkHoursPerDay": "Working Hour",
+      "WorkHoursPerYear": null,
+      "BankAccountNo": "Bank Account No.",
+      "BankBranch": "Bank Branch No.",
+      "BankCode": null,
+      "BankCurrencyCode": null,
+      "CPFMethodCode": null,
+      "CPFEmployeeType": null,
+      "FWLCode": null,
+      "Suggestion": {
+        "SCF01": {
+          "column": "Chinese Name",
+          "explanation": "based on the context of providing an address"
+        }
+      }
+    }
+    '''
+    initial_mappings_cleaned = initial_mappings.replace('\n', '')
+    initial_mappings_json = json.loads(initial_mappings_cleaned)
+    st.session_state['initial_mappings'] = initial_mappings_json
+  else:
+    initial_mappings_json = st.session_state['initial_mappings']
+  return initial_mappings_json
+
+def render_review_column_header_mapping_widget(initial_mappings, country_specific_tlx_import_sheet_headers):
+  st.header("Column Header Mappings")
+  st.write("Please review and modify (if necessary) the proposed mappings:")
+  corrected_column_mappings = display_initial_mappings(initial_mappings, country_specific_tlx_import_sheet_headers, "corrected_column_mappings")
+  return corrected_column_mappings
+
+def render_submit_column_header_mapping_button(corrected_column_mappings):
+  if st.button("Submit Column Mappings"):
+    st.session_state.submit_column_header_mappings = True
+    st.write("Here are the confirmed column mappings.")
+    with st.expander("Corrected Column Mappings:", expanded=False):
+      st.write("", corrected_column_mappings)
+
+def generate_initial_fixed_column_value_mapping_widget(llm_model, consolidated_accepted_column_values, data):
+  for user_column, tlx_column in st.session_state.corrected_column_mappings.items():
+    if tlx_column.lower() in consolidated_accepted_column_values:
+      accepted_column_values = consolidated_accepted_column_values[tlx_column.lower()]
+      # TODO Joshua remove this stub
+      # initial_value_mappings = generate_fixed_value_column_mappings(
+      #   llm_model,
+      #   data[user_column].unique().tolist(),
+      #   accepted_column_values
+      # )
+      temp = {'Gender': {'M': 'Male', 'F': 'Female'}, 'Nationality': {'MYS': 'Malaysian', 'MMR': 'Myanmarese'}, 'Race': {'Chinese': 'Chinese', 'Other': 'Others'}, 'Religion': {'BUD': 'Buddhism', 'CHR': 'Christianity'},'Marital Status': {'S': 'Single', 'M': 'Married'}}
+      initial_value_mappings = temp[tlx_column]
+      st.session_state['consolidated_corrected_value_mappings'][tlx_column] = initial_value_mappings
+  return None
+
+def render_review_fixed_column_value_mapping_widget(corrected_column_mappings, consolidated_accepted_column_values, data):
+  st.header("Column Value Mappings")
+  for _, tlx_column in corrected_column_mappings.items():
+    if tlx_column.lower() in consolidated_accepted_column_values:
+      accepted_column_values = consolidated_accepted_column_values[tlx_column.lower()]
+      initial_value_mappings = st.session_state['consolidated_corrected_value_mappings'][tlx_column]
+      
+      st.subheader(f"{tlx_column}")
+      st.write("Please review and modify (if necessary) the proposed mappings:")
+      corrected_value_mappings = display_initial_mappings(
+        initial_value_mappings,
+        accepted_column_values,
+        f"{tlx_column}_corrected_value_mappings"
+      )
+      # Update the session state with the corrected mappings
+      st.session_state['consolidated_corrected_value_mappings'][tlx_column] = corrected_value_mappings
+
+def render_populate_import_sheet_button():
+  if st.button("Populate Import Sheet"):
+    st.session_state.populate_import_sheet = True
+
+def render_final_import_sheet(uploaded_file, rows_to_skip, country_specific_tlx_import_sheet_headers):
+  # Read the uploaded file again to get the full data
+  data = pd.read_excel(uploaded_file, skiprows=rows_to_skip)
+  display_final_mapped_data(data, st.session_state.corrected_column_mappings, country_specific_tlx_import_sheet_headers[1:], st.session_state['consolidated_corrected_value_mappings'])
+
+
 def app(llm_model):
   st.title("Talenox's import sheet mapper")
-  uploaded_file = get_uploaded_file()
-  # Input field for starting row number
-  rows_to_skip = st.number_input("Enter the number of rows to skip. For example, if your data starts on the 3rd row, then input 2.", min_value=1, value=1)
+  initialise_session_state_variables()
+  # Step 1: Upload file
+  uploaded_file = render_upload_file_widget()
+  # Step 2: Check that the file has been read correctly
   if uploaded_file is not None:
+    rows_to_skip = render_sheet_skiprow_widget()
     sampled_df, raw_data_headers = extract_header_and_sample_data(uploaded_file, rows_to_skip)
     user_sample_values = extract_unique_sample_values(uploaded_file, rows_to_skip, sheet_name=0)
-    
-    st.write("File Uploaded Successfully.")
-    st.write(sampled_df)
-
-    if 'confirmed_country' not in st.session_state:
-      st.session_state.confirmed_country = None
-    country = st.selectbox("Select Country:", options=COUNTRY_OPTIONS)
-    # Add a submit button to confirm the country selection
-    if st.button("Confirm Country"):
-      st.session_state.confirmed_country = country
-
+    render_uploaded_file_head_widget(sampled_df)
+    # Step 3: Choose country
+    country = render_select_country_widget()
+    # Step 4: Confirm country
+    render_confirm_country_button(country)
+    # Step 5: Generate column header mappings
     if st.session_state.confirmed_country:
       country_specific_tlx_import_sheet_headers = get_column_headers(st.session_state.confirmed_country.lower().replace(" ", "_"))
-      country_specific_sample_values = get_sample_values(st.session_state.confirmed_country.lower().replace(" ", "_"))
-      if 'initial_mappings' not in st.session_state:
-        initial_mappings = generate_column_header_mappings(llm_model, raw_data_headers, user_sample_values, country_specific_tlx_import_sheet_headers, country_specific_sample_values)
-        # initial_mappings = '''
-        #   {
-        #     "Employee ID": "Employee ID",
-        #     "First Name*": "First Name",
-        #     "Last Name*": "Last Name",
-        #     "Nickname": "Nickname",
-        #     "Chinese Name": "Chinese Name",
-        #     "Email": "Email",
-        #     "Invite User*": "Invite User",
-        #     "User Email (if different from employee email)": "User Email (if different from employee email)",
-        #     "Access Role": "Access Role",
-        #     "My Profile Module": "My Profile Module",
-        #     "Payslip Module": "Payslip Module",
-        #     "Tax Module": "Tax Module",
-        #     "Leave Module": "Leave Module",
-        #     "Payroll Module": "Payroll Module",
-        #     "Profile Module": "Profile Module",
-        #     "Claims Module (User)": "Claims Module (User)",
-        #     "Claims Module (Admin)": "Claims Module (Admin)",
-        #     "Birth Date (DD/MM/YYYY)*": "Birth Date (DD/MM/YYYY)",
-        #     "Gender": "Gender",
-        #     "Marital Status": "Marital Status",
-        #     "Identification No*": "Identification No",
-        #     "Immigration Status*": "Immigration Status",
-        #     "PR Status": "PR Status",
-        #     "PR Effective Date (DD/MM/YYYY)": "PR Effective Date (DD/MM/YYYY)",
-        #     "S Pass Issue Date (DD/MM/YYYY)": "S Pass Issue Date (DD/MM/YYYY)",
-        #     "S Pass Expiry Date (DD/MM/YYYY)": "S Pass Expiry Date (DD/MM/YYYY)",
-        #     "S Pass Dependency Ceiling": "S Pass Dependency Ceiling",
-        #     "E Pass Issue Date (DD/MM/YYYY)": "E Pass Issue Date (DD/MM/YYYY)",
-        #     "E Pass Expiry Date (DD/MM/YYYY)": "E Pass Expiry Date (DD/MM/YYYY)",
-        #     "Letter of Consent Issue Date (DD/MM/YYYY)": "Letter of Consent Issue Date (DD/MM/YYYY)",
-        #     "Letter of Consent Expiry Date (DD/MM/YYYY)": "Letter of Consent Expiry Date (DD/MM/YYYY)",
-        #     "Personalised Employment Pass Issue Date (DD/MM/YYYY)": "Personalised Employment Pass Issue Date (DD/MM/YYYY)",
-        #     "Personalised Employment Pass Expiry Date (DD/MM/YYYY)": "Personalised Employment Pass Expiry Date (DD/MM/YYYY)",
-        #     "Work Pass Number": "Work Pass Number",
-        #     "Work Pass Issue Date (DD/MM/YYYY)": "Work Pass Issue Date (DD/MM/YYYY)",
-        #     "Work Pass Expiry Date (DD/MM/YYYY)": "Work Pass Expiry Date (DD/MM/YYYY)",
-        #     "Work Pass Dependency Ceiling": "Work Pass Dependency Ceiling",
-        #     "Work Pass Worker Category": "Work Pass Worker Category",
-        #     "Tech Pass Issue Date (DD/MM/YYYY)": "Tech Pass Issue Date (DD/MM/YYYY)",
-        #     "Tech Pass Expiry Date (DD/MM/YYYY)": "Tech Pass Expiry Date (DD/MM/YYYY)",
-        #     "ONE Pass Issue Date (DD/MM/YYYY)": "ONE Pass Issue Date (DD/MM/YYYY)",
-        #     "ONE Pass Expiry Date (DD/MM/YYYY)": "ONE Pass Expiry Date (DD/MM/YYYY)",
-        #     "Training Employment Pass Issue Date (DD/MM/YYYY)": "Training Employment Pass Issue Date (DD/MM/YYYY)",
-        #     "Training Employment Pass Expiry Date (DD/MM/YYYY)": "Training Employment Pass Expiry Date (DD/MM/YYYY)",
-        #     "Training Work Permit Issue Date (DD/MM/YYYY)": "Training Work Permit Issue Date (DD/MM/YYYY)",
-        #     "Training Work Permit Expiry Date (DD/MM/YYYY)": "Training Work Permit Expiry Date (DD/MM/YYYY)",
-        #     "Identification Issue Date (DD/MM/YYYY)": "Identification Issue Date (DD/MM/YYYY)",
-        #     "Identification Expiry Date (DD/MM/YYYY)": "Identification Expiry Date (DD/MM/YYYY)",
-        #     "Passport No": "Passport No.",
-        #     "Passport Date of Issue (DD/MM/YYYY)": "Passport Date of Issue (DD/MM/YYYY)",
-        #     "Passport Date of Expiry (DD/MM/YYYY)": "Passport Date of Expiry (DD/MM/YYYY)",
-        #     "Passport Place of Issue": "Passport Place of Issue",
-        #     "Nationality": "Nationality",
-        #     "Race": "Race",
-        #     "Religion": "Religion",
-        #     "Job Title": "Job Title",
-        #     "Hired Date (DD/MM/YYYY)*": "Hired Date (DD/MM/YYYY)",
-        #     "Job Start Date (DD/MM/YYYY)": "Job Start Date (DD/MM/YYYY)",
-        #     "Department": "Department",
-        #     "Location/Branch": "Location/Branch",
-        #     "Default Cost Centre": "Default Cost Centre",
-        #     "Role": "Role",
-        #     "Confirmation Date (DD/MM/YYYY)": "Confirmation Date (DD/MM/YYYY)",
-        #     "Working Day*": "Working Day",
-        #     "Working Hour*": "Working Hour",
-        #     "Rate of Pay*": "Rate of Pay",
-        #     "Currency of Salary*": "Currency of Salary",
-        #     "Basic Salary*": "Basic Salary",
-        #     "Designation in Accounting Software": "Designation in Accounting Software",
-        #     "Job Remarks": "Job Remarks",
-        #     "Resign Date (DD/MM/YYYY)": "Resign Date (DD/MM/YYYY)",
-        #     "Payment Method*": "Payment Method",
-        #     "Bank Type": "Bank Type",
-        #     "Bank Account Holders Name": "Bank Account Holder's Name",
-        #     "Bank Account No.": "Bank Account No.",
-        #     "Bank Branch No.": "Bank Branch No.",
-        #     "SHG Automation*": "Automatically calculate SHG",
-        #     "SHG Contribution*": "SHG Contribution",
-        #     "Additional SHG Contribution*": "Additional SHG Contribution",
-        #     "Contact Number": "Contact Number",
-        #     "Office Direct Inward Dialing (DID) Number": "Office Direct Inward Dialing (DID) Number",
-        #     "Address Line 1": "Address Line 1",
-        #     "Country": "Country",
-        #     "Region": "Region",
-        #     "Subregion": "Subregion",
-        #     "Postal Code": "Postal Code",
-        #     "Next of Kins Name": "Next of Kin's Name",
-        #     "Next of Kins Nationality": "Next of Kin's Nationality",
-        #     "Next of Kins Gender": "Next of Kin's Gender",
-        #     "Next of Kins Birth Date (DD/MM/YYYY)": "Next of Kin's Birth Date (DD/MM/YYYY)",
-        #     "Next of Kins Identification No": "Next of Kin's Identification No.",
-        #     "Next of Kins Passport No": "Next of Kin's Passport No.",
-        #     "Next of Kins Relationship": "Next of Kin's Relationship",
-        #     "Next of Kins Marriage Date (Spouse) (DD/MM/YYYY)": "Next of Kin's Marriage Date (Spouse) (DD/MM/YYYY)",
-        #     "Next of Kins Contact No": "Next of Kin's Contact No.",
-        #     "Covid-19 Vaccination Status": "Covid-19 Vaccination Status",
-        #     "Covid-19 Vaccine Brand": "Covid-19 Vaccine Brand",
-        #     "Date of 1st Dose (DD/MM/YYYY)": "Date of 1st Dose (DD/MM/YYYY)",
-        #     "Date of 2nd Dose (DD/MM/YYYY)": "Date of 2nd Dose (DD/MM/YYYY)",
-        #     "Covid-19 Vaccine Booster Brand": "Covid-19 Vaccine Booster Brand",
-        #     "Date of Booster Dose (DD/MM/YYYY)": "Date of Booster Dose (DD/MM/YYYY)",
-        #     "Vaccination Remarks": "Vaccination Remarks",
-        #     "Halal Certification Issue Date (DD/MM/YYYY)": "Halal Certification Issue Date (DD/MM/YYYY)",
-        #     "Halal Certification Expiry Date (DD/MM/YYYY)": "Halal Certification Expiry Date (DD/MM/YYYY)",
-        #     "Hygiene Certification Issue Date (DD/MM/YYYY)": "Hygiene Certification Issue Date (DD/MM/YYYY)",
-        #     "Hygiene Certification Expiry Date (DD/MM/YYYY)": "Hygiene Certification Expiry Date (DD/MM/YYYY)",
-        #     "Workday Import Fields": "Custom Fields Hash",
-        #     "asd": "Overwrite Jobs Array (Ignore current jobs columns)",
-        #     "Suggestion": {
-        #       "Position": {
-        #         "column": "Job Title",
-        #         "explanation": "based on the sample values and contextual meaning"
-        #       }
-        #     }
-        #   }
-        # '''
-        initial_mappings_cleaned = initial_mappings.replace('\n', '')
-        print(initial_mappings_cleaned)
-        initial_mappings_json = json.loads(initial_mappings_cleaned)
-        st.session_state['initial_mappings'] = initial_mappings_json
-      else:
-        initial_mappings_json = st.session_state['initial_mappings']
-
-      st.write("Please review and correct the mappings:")
-      corrected_mappings = display_initial_mappings(initial_mappings_json, country_specific_tlx_import_sheet_headers)
-
-      if st.button("Submit Mappings"):
-        st.write("Final Corrected Mappings:", corrected_mappings)
-        # Read the uploaded file again to get the full data
+      initial_mappings = generate_column_header_mappings(llm_model, raw_data_headers, user_sample_values, country_specific_tlx_import_sheet_headers)
+      # Step 6: Review proposed column header mappings by the LLM
+      st.session_state.corrected_column_mappings = render_review_column_header_mapping_widget(initial_mappings, country_specific_tlx_import_sheet_headers)
+      # Step 7: Submit confirmed header mappings
+      render_submit_column_header_mapping_button(st.session_state.corrected_column_mappings)
+      if st.session_state.submit_column_header_mappings:
+        # Step 8: Generate and review value mapping based on column mappings
         data = pd.read_excel(uploaded_file, skiprows=rows_to_skip)
-        display_mapped_data(llm_model, data, st.session_state.corrected_mappings, country_specific_tlx_import_sheet_headers[1:])
-
-        # Write to the preformatted file
-        # write_to_preformatted_excel(data, corrected_mappings, country_specific_tlx_import_sheet_headers[1:], st.session_state.confirmed_country)
+        consolidated_accepted_column_values = get_tlx_column_dropdown_values()
+        generate_initial_fixed_column_value_mapping_widget(llm_model, consolidated_accepted_column_values, data)
+        render_review_fixed_column_value_mapping_widget(st.session_state.corrected_column_mappings, consolidated_accepted_column_values, data)
+        render_populate_import_sheet_button()
+        if st.session_state.populate_import_sheet:
+          render_final_import_sheet(uploaded_file, rows_to_skip, country_specific_tlx_import_sheet_headers)
+          # Write to the preformatted file
+          # write_to_preformatted_excel(data, st.session_state.corrected_column_mappings, country_specific_tlx_import_sheet_headers[1:], st.session_state.confirmed_country)
 
 if __name__ == "__main__":
   # st.session_state.clear()

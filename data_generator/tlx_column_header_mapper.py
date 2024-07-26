@@ -539,7 +539,7 @@ def get_column_headers(country="singapore"):
   else:
     return(f"{country}.csv not found in {latest_contents_path}")
 
-def get_column_dropdown_values():
+def get_tlx_column_dropdown_values():
   # Define the directory path relative to this script's location
   script_dir = os.path.dirname(os.path.abspath(__file__))
   directory_path = os.path.join(script_dir, '../data/tlx_column_headers')
