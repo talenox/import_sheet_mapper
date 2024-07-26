@@ -18,6 +18,18 @@ warnings.filterwarnings("ignore", category=UserWarning, module="openpyxl")
 ####################################################
 COUNTRY_OPTIONS = ['SINGAPORE', 'MALAYSIA', 'HONG KONG', 'INDONESIA', 'GLOBAL']
 
+def initialise_session_state_variables():
+  if 'submit_column_header_mappings' not in st.session_state:
+    st.session_state.submit_column_header_mappings = None
+  if 'confirmed_country' not in st.session_state:
+    st.session_state.confirmed_country = None
+  if 'populate_import_sheet' not in st.session_state:
+    st.session_state.populate_import_sheet = None
+  if 'corrected_column_mappings' not in st.session_state:
+    st.session_state.corrected_column_mappings = {}
+  st.session_state['consolidated_intial_value_mappings'] = {}
+  st.session_state['consolidated_corrected_value_mappings'] = {}
+
 def render_upload_file_widget():
   st.subheader("Choose a file")
   return st.file_uploader("Upload the file containing your data.", type=["xlsx", "xls"])
@@ -31,13 +43,11 @@ def render_uploaded_file_head_widget(sampled_df):
   st.write(sampled_df)
 
 def render_select_country_widget():
-  if 'confirmed_country' not in st.session_state:
-      st.session_state.confirmed_country = None
   st.subheader("Select Country")
   country = st.selectbox("Talenox has a differently formatted import sheet for each country.", options=COUNTRY_OPTIONS)
   return country
 
-def render_confirm_country_widget(country):
+def render_confirm_country_button(country):
   if st.button("Confirm Country"):
     st.session_state.confirmed_country = country
 
@@ -98,18 +108,58 @@ def render_review_column_header_mapping_widget(initial_mappings, country_specifi
   corrected_column_mappings = display_initial_mappings(initial_mappings, country_specific_tlx_import_sheet_headers, "corrected_column_mappings")
   return corrected_column_mappings
 
-def render_submit_column_mapping_widget(corrected_column_mappings):
-  st.write("Here are the confirmed column mappings.")
-  with st.expander("Corrected Column Mappings:", expanded=False):
-    st.write("", corrected_column_mappings)
+def render_submit_column_header_mapping_button(corrected_column_mappings):
+  if st.button("Submit Column Mappings"):
+    st.session_state.submit_column_header_mappings = True
+    st.write("Here are the confirmed column mappings.")
+    with st.expander("Corrected Column Mappings:", expanded=False):
+      st.write("", corrected_column_mappings)
+
+def generate_initial_fixed_column_value_mapping_widget(llm_model, consolidated_accepted_column_values, data):
+  for user_column, tlx_column in st.session_state.corrected_column_mappings.items():
+    if tlx_column.lower() in consolidated_accepted_column_values:
+      accepted_column_values = consolidated_accepted_column_values[tlx_column.lower()]
+      # TODO Joshua remove this stub
+      # initial_value_mappings = generate_fixed_value_column_mappings(
+      #   llm_model,
+      #   data[user_column].unique().tolist(),
+      #   accepted_column_values
+      # )
+      temp = {'Gender': {'M': 'Male', 'F': 'Female'}, 'Nationality': {'MYS': 'Malaysian', 'MMR': 'Myanmarese'}, 'Race': {'Chinese': 'Chinese', 'Other': 'Others'}, 'Religion': {'BUD': 'Buddhism', 'CHR': 'Christianity'},'Marital Status': {'S': 'Single', 'M': 'Married'}}
+      initial_value_mappings = temp[tlx_column]
+      st.session_state['consolidated_corrected_value_mappings'][tlx_column] = initial_value_mappings
+  return None
+
+def render_review_fixed_column_value_mapping_widget(corrected_column_mappings, consolidated_accepted_column_values, data):
+  st.header("Column Value Mappings")
+  for _, tlx_column in corrected_column_mappings.items():
+    if tlx_column.lower() in consolidated_accepted_column_values:
+      accepted_column_values = consolidated_accepted_column_values[tlx_column.lower()]
+      initial_value_mappings = st.session_state['consolidated_corrected_value_mappings'][tlx_column]
+      
+      st.subheader(f"{tlx_column}")
+      st.write("Please review and modify (if necessary) the proposed mappings:")
+      corrected_value_mappings = display_initial_mappings(
+        initial_value_mappings,
+        accepted_column_values,
+        f"{tlx_column}_corrected_value_mappings"
+      )
+      # Update the session state with the corrected mappings
+      st.session_state['consolidated_corrected_value_mappings'][tlx_column] = corrected_value_mappings
+
+def render_populate_import_sheet_button():
+  if st.button("Populate Import Sheet"):
+    st.session_state.populate_import_sheet = True
 
 def render_final_import_sheet(uploaded_file, rows_to_skip, country_specific_tlx_import_sheet_headers):
   # Read the uploaded file again to get the full data
   data = pd.read_excel(uploaded_file, skiprows=rows_to_skip)
-  display_final_mapped_data(llm_model, data, st.session_state.corrected_mappings, country_specific_tlx_import_sheet_headers[1:], st.session_state['consolidated_corrected_value_mappings'])
-  
+  display_final_mapped_data(data, st.session_state.corrected_column_mappings, country_specific_tlx_import_sheet_headers[1:], st.session_state['consolidated_corrected_value_mappings'])
+
+
 def app(llm_model):
   st.title("Talenox's import sheet mapper")
+  initialise_session_state_variables()
   # Step 1: Upload file
   uploaded_file = render_upload_file_widget()
   # Step 2: Check that the file has been read correctly
@@ -121,34 +171,26 @@ def app(llm_model):
     # Step 3: Choose country
     country = render_select_country_widget()
     # Step 4: Confirm country
-    render_confirm_country_widget(country)
+    render_confirm_country_button(country)
     # Step 5: Generate column header mappings
     if st.session_state.confirmed_country:
       country_specific_tlx_import_sheet_headers = get_column_headers(st.session_state.confirmed_country.lower().replace(" ", "_"))
       initial_mappings = generate_column_header_mappings(llm_model, raw_data_headers, user_sample_values, country_specific_tlx_import_sheet_headers)
       # Step 6: Review proposed column header mappings by the LLM
-      corrected_column_mappings = render_review_column_header_mapping_widget(initial_mappings, country_specific_tlx_import_sheet_headers)
+      st.session_state.corrected_column_mappings = render_review_column_header_mapping_widget(initial_mappings, country_specific_tlx_import_sheet_headers)
       # Step 7: Submit confirmed header mappings
-      if st.button("Submit Column Mappings"):
-        render_submit_column_mapping_widget(corrected_column_mappings)
-        # Step 8: Generate value mapping based on column mappings
+      render_submit_column_header_mapping_button(st.session_state.corrected_column_mappings)
+      if st.session_state.submit_column_header_mappings:
+        # Step 8: Generate and review value mapping based on column mappings
         data = pd.read_excel(uploaded_file, skiprows=rows_to_skip)
-        fixed_column_values = get_tlx_column_dropdown_values()
-        st.session_state['consolidated_corrected_value_mappings'] = {}
-        st.header("Column Value Mappings")
-        for user_column, tlx_column in corrected_column_mappings.items():
-          if tlx_column.lower() in fixed_column_values:
-            accepted_column_values = fixed_column_values[tlx_column.lower()]
-            initial_value_mappings = generate_fixed_value_column_mappings(llm_model, data[user_column].unique().tolist(), accepted_column_values)
-            # Step 9: Review value mappings for each of the columns
-            st.subheader(f"{tlx_column}")
-            st.write("Please review and modify (if necessary) the proposed mappings:")
-            corrected_value_mappings = display_initial_mappings(initial_value_mappings, accepted_column_values, f"{tlx_column}_corrected_value_mappings")
-            st.session_state['consolidated_corrected_value_mappings'][tlx_column] = corrected_value_mappings
-        if st.button("Populate Import Sheet"):
+        consolidated_accepted_column_values = get_tlx_column_dropdown_values()
+        generate_initial_fixed_column_value_mapping_widget(llm_model, consolidated_accepted_column_values, data)
+        render_review_fixed_column_value_mapping_widget(st.session_state.corrected_column_mappings, consolidated_accepted_column_values, data)
+        render_populate_import_sheet_button()
+        if st.session_state.populate_import_sheet:
           render_final_import_sheet(uploaded_file, rows_to_skip, country_specific_tlx_import_sheet_headers)
           # Write to the preformatted file
-          # write_to_preformatted_excel(data, corrected_mappings, country_specific_tlx_import_sheet_headers[1:], st.session_state.confirmed_country)
+          # write_to_preformatted_excel(data, st.session_state.corrected_column_mappings, country_specific_tlx_import_sheet_headers[1:], st.session_state.confirmed_country)
 
 if __name__ == "__main__":
   # st.session_state.clear()

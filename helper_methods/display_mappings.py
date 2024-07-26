@@ -49,16 +49,15 @@ def display_initial_mappings(initial_mappings_json, fixed_values, session_key):
 def create_input_and_selectbox(fixed_values, header, mapped_value, index, key, suggestion=False):
   col1, col2 = st.columns([3, 3])
   with col1:
-    user_input = st.text_input("Label", header, disabled=True, key=f"col_1_{header}_{int(time.time())}", label_visibility="hidden")
+    user_input = st.text_input("Label", header, disabled=True, key=f"col_1_{header}_{mapped_value}", label_visibility="hidden")
   with col2:
-    corrected = st.selectbox("Label", fixed_values, index=index, key=f"col_2_{key}_{int(time.time())}", label_visibility="hidden")
+    corrected = st.selectbox("Label", fixed_values, index=index, key=f"col_2_{header}_{mapped_value}", label_visibility="hidden")
   if suggestion:
     st.text(f"{mapped_value['explanation']}")
   return user_input, corrected
 
-# TODO: Joshua update this
 # This method displays the final mappings done by the LLM and corrected by the user on the UI
-def display_final_mapped_data(llm_model, data, corrected_column_mappings, headers, corrected_value_mappings):
+def display_final_mapped_data(data, corrected_column_mappings, headers, corrected_value_mappings):
   fixed_value_columns = corrected_value_mappings.keys()
   # Initialize an empty DataFrame with the specified headers
   mapped_data = pd.DataFrame(columns=headers)
@@ -80,20 +79,3 @@ def display_final_mapped_data(llm_model, data, corrected_column_mappings, header
   # Display the mapped data in a DataFrame
   st.write("Mapped Data:")
   st.dataframe(mapped_data)
-
-def sanitise_output(output):
-  # Regex pattern to match JSON object
-  pattern = re.compile(r'({.*?})', re.DOTALL)
-  match = pattern.search(output)
-  
-  if match:
-    # Extract the JSON object string
-    json_str = match.group(1)
-    # Convert the JSON string to a Python dictionary
-    try:
-      json_obj = json.loads(json_str)
-      return json_obj
-    except json.JSONDecodeError as e:
-      return None
-  else:
-    return None
