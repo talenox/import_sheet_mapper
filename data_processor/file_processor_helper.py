@@ -58,7 +58,7 @@ def write_to_preformatted_excel(data, country):
       data = f.read()
 
     st.download_button(
-        label="Download Processed File",
+        label="Download Import Sheet",
         data=data,
         file_name=f"{country.lower()}.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"

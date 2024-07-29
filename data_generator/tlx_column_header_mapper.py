@@ -69,7 +69,7 @@ def get_tlx_column_dropdown_values():
   # Access the contents of the latest directory
   latest_contents_path = os.path.join(directory_path, latest_directory)
   # Define the path to the target CSV file
-  target_file = os.path.join(latest_contents_path, "column_dropdown_values.json")
+  target_file = os.path.join(latest_contents_path, "shared_column_dropdown_values.json")
   # Check if the target file exists and print its contents
   if os.path.isfile(target_file):
     with open(target_file, 'r') as file:

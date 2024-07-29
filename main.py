@@ -160,8 +160,7 @@ def render_final_import_sheet(uploaded_file, rows_to_skip, country_specific_tlx_
   st.session_state.mapped_data = display_final_mapped_data(data, st.session_state.corrected_column_mappings, country_specific_tlx_import_sheet_headers[1:], st.session_state['consolidated_corrected_value_mappings'], st.session_state.confirmed_country)
 
 def render_download_import_sheet_button():
-  if st.button("Download sheet"):
-    write_to_preformatted_excel(st.session_state.mapped_data, st.session_state.confirmed_country)
+  write_to_preformatted_excel(st.session_state.mapped_data, st.session_state.confirmed_country)
 
 def app(llm_model):
   st.title("Talenox's import sheet mapper")
