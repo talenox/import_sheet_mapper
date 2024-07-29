@@ -27,8 +27,11 @@ def initialise_session_state_variables():
     st.session_state.populate_import_sheet = None
   if 'corrected_column_mappings' not in st.session_state:
     st.session_state.corrected_column_mappings = {}
+  if 'download_import_sheet' not in st.session_state:
+    st.session_state.download_import_sheet = False
   st.session_state['consolidated_intial_value_mappings'] = {}
   st.session_state['consolidated_corrected_value_mappings'] = {}
+  st.session_state['mapped_data'] = pd.DataFrame()
 
 def render_upload_file_widget():
   st.subheader("Choose a file")
@@ -154,8 +157,11 @@ def render_populate_import_sheet_button():
 def render_final_import_sheet(uploaded_file, rows_to_skip, country_specific_tlx_import_sheet_headers):
   # Read the uploaded file again to get the full data
   data = pd.read_excel(uploaded_file, skiprows=rows_to_skip)
-  display_final_mapped_data(data, st.session_state.corrected_column_mappings, country_specific_tlx_import_sheet_headers[1:], st.session_state['consolidated_corrected_value_mappings'])
+  st.session_state.mapped_data = display_final_mapped_data(data, st.session_state.corrected_column_mappings, country_specific_tlx_import_sheet_headers[1:], st.session_state['consolidated_corrected_value_mappings'], st.session_state.confirmed_country)
 
+def render_download_import_sheet_button():
+  if st.button("Download sheet"):
+    write_to_preformatted_excel(st.session_state.mapped_data, st.session_state.confirmed_country)
 
 def app(llm_model):
   st.title("Talenox's import sheet mapper")
@@ -189,8 +195,8 @@ def app(llm_model):
         render_populate_import_sheet_button()
         if st.session_state.populate_import_sheet:
           render_final_import_sheet(uploaded_file, rows_to_skip, country_specific_tlx_import_sheet_headers)
-          # Write to the preformatted file
-          # write_to_preformatted_excel(data, st.session_state.corrected_column_mappings, country_specific_tlx_import_sheet_headers[1:], st.session_state.confirmed_country)
+          render_download_import_sheet_button()
+          
 
 if __name__ == "__main__":
   # st.session_state.clear()

@@ -57,9 +57,13 @@ def create_input_and_selectbox(fixed_values, header, mapped_value, index, key, s
   return user_input, corrected
 
 # This method displays the final mappings done by the LLM and corrected by the user on the UI
-def display_final_mapped_data(data, corrected_column_mappings, headers, corrected_value_mappings):
+def display_final_mapped_data(data, corrected_column_mappings, headers, corrected_value_mappings, country):
   fixed_value_columns = corrected_value_mappings.keys()
-  # Initialize an empty DataFrame with the specified headers
+  # Initialize an empty DataFrame with the specified headers from the sample sheet
+  script_dir = os.path.dirname(os.path.abspath(__file__))
+  template_path = os.path.join(script_dir, f'../data/tlx_import_sheet_samples/{country.lower()}.xlsx')
+
+  headers = extract_headers_from_excel_file(template_path, 2, sheet_name=0)
   mapped_data = pd.DataFrame(columns=headers)
 
   # Loop through mappings and populate the mapped_data DataFrame
@@ -78,4 +82,5 @@ def display_final_mapped_data(data, corrected_column_mappings, headers, correcte
   
   # Display the mapped data in a DataFrame
   st.write("Mapped Data:")
-  st.dataframe(mapped_data)
+  st.data_editor(mapped_data)
+  return mapped_data
