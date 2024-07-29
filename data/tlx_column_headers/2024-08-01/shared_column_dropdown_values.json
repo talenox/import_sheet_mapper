@@ -269,5 +269,52 @@
     "Yemenite",
     "Zambian",
     "Zimbabwean"
+  ],
+  "rate of pay": [
+    "Monthly",
+    "Daily",
+    "Hourly"
+  ],
+  "currency of salary": [
+    "SGD",
+    "HKD",
+    "MYR",
+    "USD",
+    "QAR",
+    "EUR",
+    "AUD",
+    "THB",
+    "PHP",
+    "IDR",
+    "INR",
+    "GBP",
+    "CAD",
+    "NZD",
+    "VND",
+    "BND",
+    "CNY",
+    "MMK",
+    "KRW",
+    "TWD",
+    "DKK",
+    "KHR",
+    "JPY",
+    "AED",
+    "PKR",
+    "SEK",
+    "ZAR",
+    "LKR",
+    "CHF",
+    "NPR",
+    "KES",
+    "RUB",
+    "RWF",
+    "KYD",
+    "MOP"
+  ],
+  "payment method": [
+    "Cheque",
+    "Cash",
+    "Bank Transfer"
   ]
 }
