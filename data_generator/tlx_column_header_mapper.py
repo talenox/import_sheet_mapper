@@ -41,11 +41,11 @@ def get_column_headers(country="singapore"):
   latest_directory = latest_date.strftime("%Y-%m-%d")
 
   # Access the contents of the latest directory
-  latest_contents_path = os.path.join(directory_path, latest_directory)
+  latest_contents_path = os.path.join(directory_path, latest_directory, country)
 
   # Define the path to the target CSV file
-  target_file = os.path.join(latest_contents_path, f"{country}_column_headers.csv")
-
+  target_file = os.path.join(latest_contents_path, "column_headers.csv")
+  print(target_file)
   # Check if the target file exists and print its contents
   if os.path.isfile(target_file):
     with open(target_file, 'r') as file:
