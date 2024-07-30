@@ -5,14 +5,13 @@ Important: Ensure that the context of the headers is taken into consideration by
 Example:
 
 Input:
-User-provided column headers: Full Name, Email, Address
-Fixed column headers: First Name, Last Name, Email Address, Mailing Address
+User-provided column headers: Full Name, Address
+Fixed column headers: First Name*, Last Name*, Mailing Address
 
 Expected Output (in JSON format):
 {
-  "Full Name": "First Name",
-  "Full Name": "Last Name",
-  "Email": "Email Address",
+  "Full Name": "First Name*",
+  "Full Name": "Last Name*",
   "Suggestion": {
     "Address": {
       column: "Mailing Address",

@@ -8,7 +8,7 @@ import shutil
 # Read the Excel file and sample rows of data
 def read_excel_and_sample(filename, rows_to_skip, sheet_name=0, max_rows=10):
   # Read the entire Excel file
-  df = pd.read_excel(filename, sheet_name=sheet_name, skiprows=rows_to_skip)
+  df = pd.read_excel(filename, sheet_name=sheet_name, skiprows=rows_to_skip, dtype=str)
   # Extract the header rows
   headers = df.columns.tolist()
   # Sample a maximum of 10 rows
@@ -21,7 +21,7 @@ def read_excel_and_sample(filename, rows_to_skip, sheet_name=0, max_rows=10):
 # Read the Excel file and extract the header columns
 def extract_headers_from_excel_file(filename, rows_to_skip, sheet_name=0):
   # Read the entire Excel file
-  df = pd.read_excel(filename, sheet_name=sheet_name, skiprows=rows_to_skip)
+  df = pd.read_excel(filename, sheet_name=sheet_name, skiprows=rows_to_skip, dtype=str)
   # Extract the header rows
   headers = df.columns.tolist()
   return headers

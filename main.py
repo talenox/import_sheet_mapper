@@ -54,50 +54,51 @@ def render_confirm_country_button(country):
   if st.button("Confirm Country"):
     st.session_state.confirmed_country = country
 
-def generate_column_header_mappings(llm_model, raw_data_headers, user_sample_values, country_specific_tlx_import_sheet_headers):
+def get_column_header_mappings(llm_model, raw_data_headers, user_sample_values, country_specific_tlx_import_sheet_headers):
   country_specific_sample_values = get_sample_values(st.session_state.confirmed_country.lower().replace(" ", "_"))
+  
   if 'initial_mappings' not in st.session_state:
-    # initial_mappings = generate_column_header_mappings(llm_model, raw_data_headers, user_sample_values, country_specific_tlx_import_sheet_headers, country_specific_sample_values)
-    initial_mappings = '''{
-      "EmployeeCode": "Employee ID",
-      "LastName": "Last Name",
-      "FirstName": "First Name",
-      "MiddleName": null,
-      "EmployeeName": null,
-      "AliasName": "Nickname",
-      "Gender": "Gender",
-      "Title": null,
-      "NationalityCode": "Nationality",
-      "BirthDate": "Birth Date (DD/MM/YYYY)",
-      "BirthPlace": null,
-      "RaceCode": "Race",
-      "ReligionCode": "Religion",
-      "MaritalStatus": "Marital Status",
-      "MarriageDate": null,
-      "Email": "Email",
-      "Funds": null,
-      "MOMOccupationCode": null,
-      "MOMEmployeeType": null,
-      "MOMOccupationGroup": null,
-      "MOMCategory": null,
-      "WorkDaysPerWeek": "Working Day",
-      "WorkHoursPerDay": "Working Hour",
-      "WorkHoursPerYear": null,
-      "BankAccountNo": "Bank Account No.",
-      "BankBranch": "Bank Branch No.",
-      "BankCode": null,
-      "BankCurrencyCode": null,
-      "CPFMethodCode": null,
-      "CPFEmployeeType": null,
-      "FWLCode": null,
-      "Suggestion": {
-        "SCF01": {
-          "column": "Chinese Name",
-          "explanation": "based on the context of providing an address"
-        }
-      }
-    }
-    '''
+    initial_mappings = generate_column_header_mappings(llm_model, raw_data_headers, user_sample_values, country_specific_tlx_import_sheet_headers, country_specific_sample_values)
+    # initial_mappings = '''{
+    #   "EmployeeCode": "Employee ID",
+    #   "LastName": "Last Name",
+    #   "FirstName": "First Name",
+    #   "MiddleName": null,
+    #   "EmployeeName": null,
+    #   "AliasName": "Nickname",
+    #   "Gender": "Gender",
+    #   "Title": null,
+    #   "NationalityCode": "Nationality",
+    #   "BirthDate": "Birth Date (DD/MM/YYYY)",
+    #   "BirthPlace": null,
+    #   "RaceCode": "Race",
+    #   "ReligionCode": "Religion",
+    #   "MaritalStatus": "Marital Status",
+    #   "MarriageDate": null,
+    #   "Email": "Email",
+    #   "Funds": null,
+    #   "MOMOccupationCode": null,
+    #   "MOMEmployeeType": null,
+    #   "MOMOccupationGroup": null,
+    #   "MOMCategory": null,
+    #   "WorkDaysPerWeek": "Working Day",
+    #   "WorkHoursPerDay": "Working Hour",
+    #   "WorkHoursPerYear": null,
+    #   "BankAccountNo": "Bank Account No.",
+    #   "BankBranch": "Bank Branch No.",
+    #   "BankCode": null,
+    #   "BankCurrencyCode": null,
+    #   "CPFMethodCode": null,
+    #   "CPFEmployeeType": null,
+    #   "FWLCode": null,
+    #   "Suggestion": {
+    #     "SCF01": {
+    #       "column": "Chinese Name",
+    #       "explanation": "based on the context of providing an address"
+    #     }
+    #   }
+    # }
+    # '''
     initial_mappings_cleaned = initial_mappings.replace('\n', '')
     initial_mappings_json = json.loads(initial_mappings_cleaned)
     st.session_state['initial_mappings'] = initial_mappings_json
@@ -123,13 +124,13 @@ def generate_initial_fixed_column_value_mapping_widget(llm_model, consolidated_a
     if tlx_column.lower() in consolidated_accepted_column_values:
       accepted_column_values = consolidated_accepted_column_values[tlx_column.lower()]
       # TODO Joshua remove this stub
-      # initial_value_mappings = generate_fixed_value_column_mappings(
-      #   llm_model,
-      #   data[user_column].unique().tolist(),
-      #   accepted_column_values
-      # )
-      temp = {'Gender': {'M': 'Male', 'F': 'Female'}, 'Nationality': {'MYS': 'Malaysian', 'MMR': 'Myanmarese'}, 'Race': {'Chinese': 'Chinese', 'Other': 'Others'}, 'Religion': {'BUD': 'Buddhism', 'CHR': 'Christianity'},'Marital Status': {'S': 'Single', 'M': 'Married'}}
-      initial_value_mappings = temp[tlx_column]
+      initial_value_mappings = generate_fixed_value_column_mappings(
+        llm_model,
+        data[user_column].unique().tolist(),
+        accepted_column_values
+      )
+      # temp = {'Gender': {'M': 'Male', 'F': 'Female'}, 'Nationality': {'MYS': 'Malaysian', 'MMR': 'Myanmarese'}, 'Race': {'Chinese': 'Chinese', 'Other': 'Others'}, 'Religion': {'BUD': 'Buddhism', 'CHR': 'Christianity'},'Marital Status': {'S': 'Single', 'M': 'Married'}}
+      # initial_value_mappings = temp[tlx_column]
       st.session_state['consolidated_corrected_value_mappings'][tlx_column] = initial_value_mappings
   return None
 
@@ -180,7 +181,7 @@ def app(llm_model):
     # Step 5: Generate column header mappings
     if st.session_state.confirmed_country:
       country_specific_tlx_import_sheet_headers = get_column_headers(st.session_state.confirmed_country.lower().replace(" ", "_"))
-      initial_mappings = generate_column_header_mappings(llm_model, raw_data_headers, user_sample_values, country_specific_tlx_import_sheet_headers)
+      initial_mappings = get_column_header_mappings(llm_model, raw_data_headers, user_sample_values, country_specific_tlx_import_sheet_headers)
       # Step 6: Review proposed column header mappings by the LLM
       st.session_state.corrected_column_mappings = render_review_column_header_mapping_widget(initial_mappings, country_specific_tlx_import_sheet_headers)
       # Step 7: Submit confirmed header mappings
