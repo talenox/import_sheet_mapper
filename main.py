@@ -29,6 +29,8 @@ def initialise_session_state_variables():
     st.session_state.corrected_column_mappings = {}
   if 'download_import_sheet' not in st.session_state:
     st.session_state.download_import_sheet = False
+  if 'previous_confirmed_country' not in st.session_state:
+    st.session_state.previous_confirmed_country = None
   st.session_state['consolidated_intial_value_mappings'] = {}
   st.session_state['consolidated_corrected_value_mappings'] = {}
   st.session_state['mapped_data'] = pd.DataFrame()
@@ -179,7 +181,8 @@ def app(llm_model):
     # Step 4: Confirm country
     render_confirm_country_button(country)
     # Step 5: Generate column header mappings
-    if st.session_state.confirmed_country:
+    if st.session_state.previous_confirmed_country != st.session_state.confirmed_country:
+      st.session_state.previous_confirmed_country = st.session_state.confirmed_country
       country_specific_tlx_import_sheet_headers = get_column_headers(st.session_state.confirmed_country.lower().replace(" ", "_"))
       initial_mappings = get_column_header_mappings(llm_model, raw_data_headers, user_sample_values, country_specific_tlx_import_sheet_headers)
       # Step 6: Review proposed column header mappings by the LLM
