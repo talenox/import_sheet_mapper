@@ -30,7 +30,13 @@ def display_initial_mappings(initial_mappings_json, fixed_values, session_key):
     with st.expander("🟠 Suggested Items", expanded=True):
       for _, suggested_mappings in suggested_headers.items():
         for user_header, suggestion_header in suggested_mappings.items():
-          index = fixed_values.index(suggestion_header['column']) if suggestion_header['column'] in fixed_values else 0
+          if suggestion_header['column'] in fixed_values:
+            index = fixed_values.index(suggestion_header['column'])
+          elif f"{suggestion_header['column']}*" in fixed_values:
+            mapped_header = f"{suggestion_header['column']}*"
+            index = fixed_values.index(suggestion_header['column'])
+          else:
+            index = 0
           user_input, corrected = create_input_and_selectbox(fixed_values, user_header, suggestion_header, index, key, suggestion=True)
           st.session_state[session_key][user_input] = corrected
           key += 1
@@ -38,7 +44,13 @@ def display_initial_mappings(initial_mappings_json, fixed_values, session_key):
   if len(confirmed_mapping) > 0:
     with st.expander("🟢 Confirmed Mappings", expanded=False):
       for user_header, mapped_header in confirmed_mapping.items():
-        index = fixed_values.index(mapped_header) if mapped_header in fixed_values else 0
+        if mapped_header in fixed_values:
+          index = fixed_values.index(mapped_header)
+        elif f"{mapped_header}*" in fixed_values:
+          mapped_header = f"{mapped_header}*"
+          index = fixed_values.index(mapped_header)
+        else:
+          index = 0
         user_input, corrected = create_input_and_selectbox(fixed_values, user_header, mapped_header, index, key)
         st.session_state[session_key][user_input] = corrected
         key += 1

@@ -1,0 +1,42 @@
+{
+  "immigration status": [
+    "Singapore Citizen",
+    "Singapore PR",
+    "S Pass",
+    "E Pass",
+    "Personalised Employment Pass",
+    "Letter of Consent (Dependent Pass, Long term visit pass)",
+    "Work Permit",
+    "Student Visa (No CPF, No SDL)",
+    "Contract With SDL (No CPF, W/SDL)",
+    "Contract (No CPF, No SDL)",
+    "Work Holiday Pass (No CPF)",
+    "EntrePass",
+    "Intern",
+    "Passport (Oversea Director)",
+    "Tech Pass",
+    "Overseas Networks & Expertise Pass",
+    "Training Employment Pass",
+    "Training Work Permit"
+  ],
+  "pr status": [
+    null,
+    "Full ER",
+    "Graduated",
+    "Full EE/ER"
+  ],
+  "shg contribution": [
+    "MBMF",
+    "CDAC",
+    "SINDA",
+    "ECF",
+    "N/A"
+  ],
+  "additional shg contribution": [
+    "MBMF",
+    "CDAC",
+    "SINDA",
+    "ECF",
+    "N/A"
+  ]
+}

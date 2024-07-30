@@ -29,6 +29,8 @@ def initialise_session_state_variables():
     st.session_state.corrected_column_mappings = {}
   if 'download_import_sheet' not in st.session_state:
     st.session_state.download_import_sheet = False
+  if 'previous_confirmed_country' not in st.session_state:
+    st.session_state.previous_confirmed_country = None
   st.session_state['consolidated_intial_value_mappings'] = {}
   st.session_state['consolidated_corrected_value_mappings'] = {}
   st.session_state['mapped_data'] = pd.DataFrame()
@@ -53,51 +55,59 @@ def render_select_country_widget():
 def render_confirm_country_button(country):
   if st.button("Confirm Country"):
     st.session_state.confirmed_country = country
+    st.session_state.corrected_column_mappings = {}
+    st.session_state['consolidated_intial_value_mappings'] = {}
+    st.session_state['consolidated_corrected_value_mappings'] = {}
+    st.session_state['mapped_data'] = pd.DataFrame()
+    st.session_state['initial_mappings'] = None
+    st.session_state['populate_import_sheet'] = None
+    st.session_state['download_import_sheet'] = False
+    st.session_state['submit_column_header_mappings'] = False
 
-def generate_column_header_mappings(llm_model, raw_data_headers, user_sample_values, country_specific_tlx_import_sheet_headers):
+def get_column_header_mappings(llm_model, raw_data_headers, user_sample_values, country_specific_tlx_import_sheet_headers):
   country_specific_sample_values = get_sample_values(st.session_state.confirmed_country.lower().replace(" ", "_"))
-  if 'initial_mappings' not in st.session_state:
-    # initial_mappings = generate_column_header_mappings(llm_model, raw_data_headers, user_sample_values, country_specific_tlx_import_sheet_headers, country_specific_sample_values)
-    initial_mappings = '''{
-      "EmployeeCode": "Employee ID",
-      "LastName": "Last Name",
-      "FirstName": "First Name",
-      "MiddleName": null,
-      "EmployeeName": null,
-      "AliasName": "Nickname",
-      "Gender": "Gender",
-      "Title": null,
-      "NationalityCode": "Nationality",
-      "BirthDate": "Birth Date (DD/MM/YYYY)",
-      "BirthPlace": null,
-      "RaceCode": "Race",
-      "ReligionCode": "Religion",
-      "MaritalStatus": "Marital Status",
-      "MarriageDate": null,
-      "Email": "Email",
-      "Funds": null,
-      "MOMOccupationCode": null,
-      "MOMEmployeeType": null,
-      "MOMOccupationGroup": null,
-      "MOMCategory": null,
-      "WorkDaysPerWeek": "Working Day",
-      "WorkHoursPerDay": "Working Hour",
-      "WorkHoursPerYear": null,
-      "BankAccountNo": "Bank Account No.",
-      "BankBranch": "Bank Branch No.",
-      "BankCode": null,
-      "BankCurrencyCode": null,
-      "CPFMethodCode": null,
-      "CPFEmployeeType": null,
-      "FWLCode": null,
-      "Suggestion": {
-        "SCF01": {
-          "column": "Chinese Name",
-          "explanation": "based on the context of providing an address"
-        }
-      }
-    }
-    '''
+  if st.session_state.initial_mappings is None:
+    initial_mappings = generate_column_header_mappings(llm_model, raw_data_headers, user_sample_values, country_specific_tlx_import_sheet_headers, country_specific_sample_values)
+    # initial_mappings = '''{
+    #   "EmployeeCode": "Employee ID",
+    #   "LastName": "Last Name",
+    #   "FirstName": "First Name",
+    #   "MiddleName": null,
+    #   "EmployeeName": null,
+    #   "AliasName": "Nickname",
+    #   "Gender": "Gender",
+    #   "Title": null,
+    #   "NationalityCode": "Nationality",
+    #   "BirthDate": "Birth Date (DD/MM/YYYY)",
+    #   "BirthPlace": null,
+    #   "RaceCode": "Race",
+    #   "ReligionCode": "Religion",
+    #   "MaritalStatus": "Marital Status",
+    #   "MarriageDate": null,
+    #   "Email": "Email",
+    #   "Funds": null,
+    #   "MOMOccupationCode": null,
+    #   "MOMEmployeeType": null,
+    #   "MOMOccupationGroup": null,
+    #   "MOMCategory": null,
+    #   "WorkDaysPerWeek": "Working Day",
+    #   "WorkHoursPerDay": "Working Hour",
+    #   "WorkHoursPerYear": null,
+    #   "BankAccountNo": "Bank Account No.",
+    #   "BankBranch": "Bank Branch No.",
+    #   "BankCode": null,
+    #   "BankCurrencyCode": null,
+    #   "CPFMethodCode": null,
+    #   "CPFEmployeeType": null,
+    #   "FWLCode": null,
+    #   "Suggestion": {
+    #     "SCF01": {
+    #       "column": "Chinese Name",
+    #       "explanation": "based on the context of providing an address"
+    #     }
+    #   }
+    # }
+    # '''
     initial_mappings_cleaned = initial_mappings.replace('\n', '')
     initial_mappings_json = json.loads(initial_mappings_cleaned)
     st.session_state['initial_mappings'] = initial_mappings_json
@@ -123,13 +133,13 @@ def generate_initial_fixed_column_value_mapping_widget(llm_model, consolidated_a
     if tlx_column.lower() in consolidated_accepted_column_values:
       accepted_column_values = consolidated_accepted_column_values[tlx_column.lower()]
       # TODO Joshua remove this stub
-      # initial_value_mappings = generate_fixed_value_column_mappings(
-      #   llm_model,
-      #   data[user_column].unique().tolist(),
-      #   accepted_column_values
-      # )
-      temp = {'Gender': {'M': 'Male', 'F': 'Female'}, 'Nationality': {'MYS': 'Malaysian', 'MMR': 'Myanmarese'}, 'Race': {'Chinese': 'Chinese', 'Other': 'Others'}, 'Religion': {'BUD': 'Buddhism', 'CHR': 'Christianity'},'Marital Status': {'S': 'Single', 'M': 'Married'}}
-      initial_value_mappings = temp[tlx_column]
+      initial_value_mappings = generate_fixed_value_column_mappings(
+        llm_model,
+        data[user_column].unique().tolist(),
+        accepted_column_values
+      )
+      # temp = {'Gender': {'M': 'Male', 'F': 'Female'}, 'Nationality': {'MYS': 'Malaysian', 'MMR': 'Myanmarese'}, 'Race': {'Chinese': 'Chinese', 'Other': 'Others'}, 'Religion': {'BUD': 'Buddhism', 'CHR': 'Christianity'},'Marital Status': {'S': 'Single', 'M': 'Married'}}
+      # initial_value_mappings = temp[tlx_column]
       st.session_state['consolidated_corrected_value_mappings'][tlx_column] = initial_value_mappings
   return None
 
@@ -160,8 +170,7 @@ def render_final_import_sheet(uploaded_file, rows_to_skip, country_specific_tlx_
   st.session_state.mapped_data = display_final_mapped_data(data, st.session_state.corrected_column_mappings, country_specific_tlx_import_sheet_headers[1:], st.session_state['consolidated_corrected_value_mappings'], st.session_state.confirmed_country)
 
 def render_download_import_sheet_button():
-  if st.button("Download sheet"):
-    write_to_preformatted_excel(st.session_state.mapped_data, st.session_state.confirmed_country)
+  write_to_preformatted_excel(st.session_state.mapped_data, st.session_state.confirmed_country)
 
 def app(llm_model):
   st.title("Talenox's import sheet mapper")
@@ -180,8 +189,10 @@ def app(llm_model):
     render_confirm_country_button(country)
     # Step 5: Generate column header mappings
     if st.session_state.confirmed_country:
+      if st.session_state.previous_confirmed_country != st.session_state.confirmed_country:
+        st.session_state.previous_confirmed_country = st.session_state.confirmed_country
       country_specific_tlx_import_sheet_headers = get_column_headers(st.session_state.confirmed_country.lower().replace(" ", "_"))
-      initial_mappings = generate_column_header_mappings(llm_model, raw_data_headers, user_sample_values, country_specific_tlx_import_sheet_headers)
+      initial_mappings = get_column_header_mappings(llm_model, raw_data_headers, user_sample_values, country_specific_tlx_import_sheet_headers)
       # Step 6: Review proposed column header mappings by the LLM
       st.session_state.corrected_column_mappings = render_review_column_header_mapping_widget(initial_mappings, country_specific_tlx_import_sheet_headers)
       # Step 7: Submit confirmed header mappings
@@ -201,8 +212,8 @@ def app(llm_model):
 if __name__ == "__main__":
   # st.session_state.clear()
   # Initialize the OpenAI client
-  # llm_model = OpenAi()
+  llm_model = OpenAi()
   
   # Initialize the Gemini client
-  llm_model = Gemini()
+  # llm_model = Gemini()
   app(llm_model)

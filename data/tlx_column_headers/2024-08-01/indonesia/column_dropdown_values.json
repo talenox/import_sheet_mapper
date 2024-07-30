@@ -1,0 +1,11 @@
+{
+  "immigration status": [
+    "KTP (Residential Identity Card)",
+    "NPWP (Tax Identification Number)",
+    "SIM (Driving License)",
+    "Paspor (Passport)",
+    "KITAS (Limited Stay Permit)",
+    "KITAP (Permanent Stay Permit)",
+    "Contract (no BPJS)"
+  ]  
+}

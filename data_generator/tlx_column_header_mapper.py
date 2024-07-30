@@ -20,7 +20,7 @@ def update_column_headers(version):
       excel_file_path = os.path.join(import_sheets_folder, file_name)   
       headers = extract_headers_from_excel_file(excel_file_path, 2, sheet_name=0)
       # Construct the output CSV file path
-      csv_file_name = os.path.splitext(file_name)[0] + '.csv'
+      csv_file_name = os.path.splitext(file_name)[0] + '_column_headers.csv'
       output_csv_path = os.path.join(folder_path, csv_file_name)
       # Write the headers to the CSV file
       with open(output_csv_path, 'w', newline='') as csvfile:
@@ -41,10 +41,10 @@ def get_column_headers(country="singapore"):
   latest_directory = latest_date.strftime("%Y-%m-%d")
 
   # Access the contents of the latest directory
-  latest_contents_path = os.path.join(directory_path, latest_directory)
+  latest_contents_path = os.path.join(directory_path, latest_directory, country)
 
   # Define the path to the target CSV file
-  target_file = os.path.join(latest_contents_path, f"{country}.csv")
+  target_file = os.path.join(latest_contents_path, "column_headers.csv")
 
   # Check if the target file exists and print its contents
   if os.path.isfile(target_file):
@@ -69,7 +69,7 @@ def get_tlx_column_dropdown_values():
   # Access the contents of the latest directory
   latest_contents_path = os.path.join(directory_path, latest_directory)
   # Define the path to the target CSV file
-  target_file = os.path.join(latest_contents_path, "column_dropdown_values.json")
+  target_file = os.path.join(latest_contents_path, "shared_column_dropdown_values.json")
   # Check if the target file exists and print its contents
   if os.path.isfile(target_file):
     with open(target_file, 'r') as file:
