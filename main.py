@@ -56,10 +56,16 @@ def render_confirm_country_button(country):
   if st.button("Confirm Country"):
     st.session_state.confirmed_country = country
 
+def reset_state_after_country_change():
+  st.session_state.corrected_column_mappings = {}
+  st.session_state['consolidated_intial_value_mappings'] = {}
+  st.session_state['consolidated_corrected_value_mappings'] = {}
+  st.session_state['mapped_data'] = pd.DataFrame()
+  st.session_state['initial_mappings'] = None
+
 def get_column_header_mappings(llm_model, raw_data_headers, user_sample_values, country_specific_tlx_import_sheet_headers):
   country_specific_sample_values = get_sample_values(st.session_state.confirmed_country.lower().replace(" ", "_"))
-  
-  if 'initial_mappings' not in st.session_state:
+  if st.session_state.initial_mappings is None:
     initial_mappings = generate_column_header_mappings(llm_model, raw_data_headers, user_sample_values, country_specific_tlx_import_sheet_headers, country_specific_sample_values)
     # initial_mappings = '''{
     #   "EmployeeCode": "Employee ID",
@@ -183,6 +189,7 @@ def app(llm_model):
     # Step 5: Generate column header mappings
     if st.session_state.previous_confirmed_country != st.session_state.confirmed_country:
       st.session_state.previous_confirmed_country = st.session_state.confirmed_country
+      reset_state_after_country_change()
       country_specific_tlx_import_sheet_headers = get_column_headers(st.session_state.confirmed_country.lower().replace(" ", "_"))
       initial_mappings = get_column_header_mappings(llm_model, raw_data_headers, user_sample_values, country_specific_tlx_import_sheet_headers)
       # Step 6: Review proposed column header mappings by the LLM

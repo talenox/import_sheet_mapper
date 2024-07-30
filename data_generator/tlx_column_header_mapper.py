@@ -45,7 +45,7 @@ def get_column_headers(country="singapore"):
 
   # Define the path to the target CSV file
   target_file = os.path.join(latest_contents_path, "column_headers.csv")
-  print(target_file)
+
   # Check if the target file exists and print its contents
   if os.path.isfile(target_file):
     with open(target_file, 'r') as file:
