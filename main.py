@@ -55,13 +55,14 @@ def render_select_country_widget():
 def render_confirm_country_button(country):
   if st.button("Confirm Country"):
     st.session_state.confirmed_country = country
-
-def reset_state_after_country_change():
-  st.session_state.corrected_column_mappings = {}
-  st.session_state['consolidated_intial_value_mappings'] = {}
-  st.session_state['consolidated_corrected_value_mappings'] = {}
-  st.session_state['mapped_data'] = pd.DataFrame()
-  st.session_state['initial_mappings'] = None
+    st.session_state.corrected_column_mappings = {}
+    st.session_state['consolidated_intial_value_mappings'] = {}
+    st.session_state['consolidated_corrected_value_mappings'] = {}
+    st.session_state['mapped_data'] = pd.DataFrame()
+    st.session_state['initial_mappings'] = None
+    st.session_state['populate_import_sheet'] = None
+    st.session_state['download_import_sheet'] = False
+    st.session_state['submit_column_header_mappings'] = False
 
 def get_column_header_mappings(llm_model, raw_data_headers, user_sample_values, country_specific_tlx_import_sheet_headers):
   country_specific_sample_values = get_sample_values(st.session_state.confirmed_country.lower().replace(" ", "_"))
@@ -187,9 +188,9 @@ def app(llm_model):
     # Step 4: Confirm country
     render_confirm_country_button(country)
     # Step 5: Generate column header mappings
-    if st.session_state.previous_confirmed_country != st.session_state.confirmed_country:
-      st.session_state.previous_confirmed_country = st.session_state.confirmed_country
-      reset_state_after_country_change()
+    if st.session_state.confirmed_country:
+      if st.session_state.previous_confirmed_country != st.session_state.confirmed_country:
+        st.session_state.previous_confirmed_country = st.session_state.confirmed_country
       country_specific_tlx_import_sheet_headers = get_column_headers(st.session_state.confirmed_country.lower().replace(" ", "_"))
       initial_mappings = get_column_header_mappings(llm_model, raw_data_headers, user_sample_values, country_specific_tlx_import_sheet_headers)
       # Step 6: Review proposed column header mappings by the LLM
@@ -211,8 +212,8 @@ def app(llm_model):
 if __name__ == "__main__":
   # st.session_state.clear()
   # Initialize the OpenAI client
-  # llm_model = OpenAi()
+  llm_model = OpenAi()
   
   # Initialize the Gemini client
-  llm_model = Gemini()
+  # llm_model = Gemini()
   app(llm_model)
