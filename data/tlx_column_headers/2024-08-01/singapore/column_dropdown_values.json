@@ -1,4 +1,11 @@
 {
+  "marital status": [
+    "Single", 
+    "Widowed", 
+    "Separated",
+    "Married",
+    "Divorced"
+  ],
   "immigration status": [
     "Singapore Citizen",
     "Singapore PR",

@@ -198,7 +198,8 @@ def app(llm_model):
       # Step 7: Submit confirmed header mappings
       render_submit_column_header_mapping_button(st.session_state.corrected_column_mappings)
       if st.session_state.submit_column_header_mappings:
-        # Step 8: Generate and review value mapping based on column mappings
+        # Step 8: Choose default values for mandatory columns
+        # Step 9: Generate and review value mapping based on column mappings
         data = pd.read_excel(uploaded_file, skiprows=rows_to_skip)
         consolidated_accepted_column_values = get_tlx_column_dropdown_values()
         generate_initial_fixed_column_value_mapping_widget(llm_model, consolidated_accepted_column_values, data)

@@ -1,4 +1,5 @@
 {
+  "invite user": ["YES", "NO"],
   "race": [
     "African",
     "African-American",
@@ -33,13 +34,6 @@
     "Free Thinker"
   ],
   "gender": ["Male", "Female"],
-  "marital status": [
-    "Single", 
-    "Widowed", 
-    "Separated",
-    "Married",
-    "Divorced"
-  ],
   "nationality": [
     "Afghan",
     "Albanian",
