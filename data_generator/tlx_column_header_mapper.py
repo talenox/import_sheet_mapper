@@ -54,7 +54,7 @@ def get_column_headers(country="singapore"):
   else:
     return(f"{country}.csv not found in {latest_contents_path}")
 
-def get_tlx_column_dropdown_values():
+def get_tlx_column_dropdown_values(country):
   # Define the directory path relative to this script's location
   script_dir = os.path.dirname(os.path.abspath(__file__))
   directory_path = os.path.join(script_dir, '../data/tlx_column_headers')
@@ -70,13 +70,26 @@ def get_tlx_column_dropdown_values():
   latest_contents_path = os.path.join(directory_path, latest_directory)
   # Define the path to the target CSV file
   target_file = os.path.join(latest_contents_path, "shared_column_dropdown_values.json")
+  country_specific_target_file = os.path.join(latest_contents_path, f'{country}', 'column_dropdown_values.json')
+
   # Check if the target file exists and print its contents
+  shared_data = {}
   if os.path.isfile(target_file):
     with open(target_file, 'r') as file:
-      data = json.load(file)
-      return data
+      shared_data = json.load(file)
   else:
-    return f"File not found in {latest_contents_path}"
+    print(f"Shared file not found in {latest_contents_path}")
+    
+  # Load the country-specific JSON data
+  country_data = {}
+  if os.path.isfile(country_specific_target_file):
+    with open(country_specific_target_file, 'r') as file:
+      country_data = json.load(file)
+  else:
+    print(f"Country file not found in {os.path.join(script_dir, f'../data/tlx_column_headers/{country}')}")
+  # Combine the two dictionaries
+  combined_data = {**shared_data, **country_data}
+  return combined_data
 
 def get_sample_values(country="singapore"):
   # Define the directory path relative to this script's location

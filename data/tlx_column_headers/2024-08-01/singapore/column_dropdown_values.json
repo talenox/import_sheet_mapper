@@ -32,6 +32,10 @@
     "Graduated",
     "Full EE/ER"
   ],
+  "shg_automation": [
+    "YES",
+    "NO"
+  ],
   "shg_contribution": [
     "MBMF",
     "CDAC",

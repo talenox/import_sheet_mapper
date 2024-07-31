@@ -207,7 +207,7 @@ def app(llm_model):
         # Step 8: Choose default values for mandatory columns
         # Step 9: Generate and review value mapping based on column mappings
         data = pd.read_excel(uploaded_file, skiprows=rows_to_skip)
-        consolidated_accepted_column_values = get_tlx_column_dropdown_values()
+        consolidated_accepted_column_values = get_tlx_column_dropdown_values(st.session_state.confirmed_country)
         generate_initial_fixed_column_value_mapping_widget(llm_model, consolidated_accepted_column_values, data)
         render_review_fixed_column_value_mapping_widget(st.session_state.corrected_column_mappings, consolidated_accepted_column_values, data)
         render_populate_import_sheet_button()
