@@ -1,11 +1,11 @@
 {
-  "marital status": [
+  "marital_status": [
     "Single/Spouse Not Claimed Children",
     "Married and Spouse Not Working",
     "Married and Spouse Working",
     "Divorce/Widow/Widower"
   ],
-  "immigration status": [
+  "immigration_status": [
     "Resident",
     "Resident (Non-Malaysian)",
     "Resident (Non-Malaysian) (Registered after August 1998)",
@@ -16,26 +16,95 @@
     "Student (No EPF)",
     "Intern"
   ],
-  "disabled individual": ["YES", "NO"],
-  "disabled spouse": ["YES", "NO"],
-  "contributing epf?": ["YES", "NO"],
-  "employee epf setting": [ "Statutory Default", "4%", "5.5%", "7%", "8%", "9%", "10%", "11%", "12%",
-  "13%", "14%", "15%", "16%", "17%", "18%", "19%", "20%", "21%", "22%", "23%", "24%", "25%",
-  "26%", "27%", "28%", "29%", "30%", "32%", "46.6%"],
-  "employer epf setting": [ "Statutory Default", "N/A", "6%", "6.5%", "12%",
-  "13%", "14%", "15%", "16%", "17%", "18%", "19%", "20%", "21%", "22%", "23%", "24%", "25%",
-  "26%", "27%", "28%", "29%", "30%", "32%"],
-  "pcb borne by employer": ["YES", "NO"],
-  "socso category": [ 
-    "N/A", 
-    "Automatic scheme selection based on age", 
-    "Employment Injury Scheme and Invalidity Scheme",
-    "Employment Injury Scheme", 
-    "Foreign Workers Social Security" 
+  "disabled_individual": [
+    "YES",
+    "NO"
   ],
-  "employement insurance system(eis)": ["YES", "NO"],
-  "contributing hrdf?": ["YES", "NO"],
-  "payroll month to start applying accumulated deductions.": [
+  "disabled_spouse": [
+    "YES",
+    "NO"
+  ],
+  "contributing_epf": [
+    "YES",
+    "NO"
+  ],
+  "employee_epf_setting": [
+    "Statutory Default",
+    "4%",
+    "5.5%",
+    "7%",
+    "8%",
+    "9%",
+    "10%",
+    "11%",
+    "12%",
+    "13%",
+    "14%",
+    "15%",
+    "16%",
+    "17%",
+    "18%",
+    "19%",
+    "20%",
+    "21%",
+    "22%",
+    "23%",
+    "24%",
+    "25%",
+    "26%",
+    "27%",
+    "28%",
+    "29%",
+    "30%",
+    "32%",
+    "46.6%"
+  ],
+  "employer_epf_setting": [
+    "Statutory Default",
+    "N/A",
+    "6%",
+    "6.5%",
+    "12%",
+    "13%",
+    "14%",
+    "15%",
+    "16%",
+    "17%",
+    "18%",
+    "19%",
+    "20%",
+    "21%",
+    "22%",
+    "23%",
+    "24%",
+    "25%",
+    "26%",
+    "27%",
+    "28%",
+    "29%",
+    "30%",
+    "32%"
+  ],
+  "pcb_borne_by_employer": [
+    "YES",
+    "NO"
+  ],
+  "socso_category": [
+    "N/A",
+    "Automatic scheme selection based on age",
+    "Employment Injury Scheme and Invalidity Scheme",
+    "Employment Injury Scheme",
+    "Foreign Workers Social Security"
+  ],
+  "employement_insurance_systemeis": [
+    "YES",
+    "NO"
+  ],
+  "contributing_hrdf": [
+    "YES",
+    "NO"
+  ],
+  "payroll_month_to_start_applying_accumulated_deductions": [
     "January",
     "February",
     "March",

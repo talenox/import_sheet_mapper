@@ -1,12 +1,12 @@
 {
-  "marital status": [
+  "marital_status": [
     "Single",
     "Married",
     "Widow",
     "Widower",
     "Divorced"
   ],
-  "immigration status": [
+  "immigration_status": [
     "KTP (Residential Identity Card)",
     "NPWP (Tax Identification Number)",
     "SIM (Driving License)",

@@ -1,12 +1,12 @@
 {
-  "marital status": [
-    "Single", 
-    "Widowed", 
+  "marital_status": [
+    "Single",
+    "Widowed",
     "Separated",
     "Married",
     "Divorced"
   ],
-  "immigration status": [
+  "immigration_status": [
     "Singapore Citizen",
     "Singapore PR",
     "S Pass",
@@ -26,20 +26,20 @@
     "Training Employment Pass",
     "Training Work Permit"
   ],
-  "pr status": [
+  "pr_status": [
     null,
     "Full ER",
     "Graduated",
     "Full EE/ER"
   ],
-  "shg contribution": [
+  "shg_contribution": [
     "MBMF",
     "CDAC",
     "SINDA",
     "ECF",
     "N/A"
   ],
-  "additional shg contribution": [
+  "additional_shg_contribution": [
     "MBMF",
     "CDAC",
     "SINDA",

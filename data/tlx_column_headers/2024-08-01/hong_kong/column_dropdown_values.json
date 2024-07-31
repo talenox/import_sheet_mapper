@@ -1,5 +1,5 @@
 {
-  "marital status": [
+  "marital_status": [
     "Single",
     "Widowed",
     "Separated",
@@ -7,7 +7,7 @@
     "Divorced",
     "Partnered"
   ],
-  "visa type": [
+  "visa_type": [
     "Hong Kong Permanent Resident",
     "Hong Kong Non-Permanent Resident",
     "General Employment Policy (GEP)",

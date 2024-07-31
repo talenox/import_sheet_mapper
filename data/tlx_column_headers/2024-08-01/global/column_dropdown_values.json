@@ -1,7 +1,7 @@
 {
-  "marital status": [
-    "Single", 
-    "Widowed", 
+  "marital_status": [
+    "Single",
+    "Widowed",
     "Separated",
     "Married",
     "Divorced"

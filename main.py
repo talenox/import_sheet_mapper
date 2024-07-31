@@ -130,8 +130,9 @@ def render_submit_column_header_mapping_button(corrected_column_mappings):
 
 def generate_initial_fixed_column_value_mapping_widget(llm_model, consolidated_accepted_column_values, data):
   for user_column, tlx_column in st.session_state.corrected_column_mappings.items():
-    if tlx_column.lower() in consolidated_accepted_column_values:
-      accepted_column_values = consolidated_accepted_column_values[tlx_column.lower()]
+    normalised_column_name = normalise_column_name(tlx_column)
+    if normalised_column_name in consolidated_accepted_column_values:
+      accepted_column_values = consolidated_accepted_column_values[normalised_column_name]
       # TODO Joshua remove this stub
       initial_value_mappings = generate_fixed_value_column_mappings(
         llm_model,
@@ -146,8 +147,9 @@ def generate_initial_fixed_column_value_mapping_widget(llm_model, consolidated_a
 def render_review_fixed_column_value_mapping_widget(corrected_column_mappings, consolidated_accepted_column_values, data):
   st.header("Column Value Mappings")
   for _, tlx_column in corrected_column_mappings.items():
-    if tlx_column.lower() in consolidated_accepted_column_values:
-      accepted_column_values = consolidated_accepted_column_values[tlx_column.lower()]
+    normalised_column_name = normalise_column_name(tlx_column)
+    if normalised_column_name in consolidated_accepted_column_values:
+      accepted_column_values = consolidated_accepted_column_values[normalised_column_name]
       initial_value_mappings = st.session_state['consolidated_corrected_value_mappings'][tlx_column]
       
       st.subheader(f"{tlx_column}")
@@ -171,6 +173,10 @@ def render_final_import_sheet(uploaded_file, rows_to_skip, country_specific_tlx_
 
 def render_download_import_sheet_button():
   write_to_preformatted_excel(st.session_state.mapped_data, st.session_state.confirmed_country)
+
+def normalise_column_name(column):
+  column = column.lower().replace(' ', '_')
+  return re.sub(r'[^a-z0-9_]', '', column)
 
 def app(llm_model):
   st.title("Talenox's import sheet mapper")
