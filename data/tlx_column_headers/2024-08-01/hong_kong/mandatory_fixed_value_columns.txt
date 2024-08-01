@@ -1,0 +1,5 @@
+Invite User
+Visa Type
+Rate of Pay
+Currency of Salary
+Payment Method

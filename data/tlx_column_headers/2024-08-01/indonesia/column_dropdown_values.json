@@ -1,5 +1,12 @@
 {
-  "immigration status": [
+  "marital_status": [
+    "Single",
+    "Married",
+    "Widow",
+    "Widower",
+    "Divorced"
+  ],
+  "immigration_status": [
     "KTP (Residential Identity Card)",
     "NPWP (Tax Identification Number)",
     "SIM (Driving License)",
@@ -7,5 +14,19 @@
     "KITAS (Limited Stay Permit)",
     "KITAP (Permanent Stay Permit)",
     "Contract (no BPJS)"
-  ]  
+  ],
+  "ptkp": [
+    "TK/0",
+    "TK/1",
+    "TK/2",
+    "TK/3",
+    "K/0",
+    "K/1",
+    "K/2",
+    "K/3",
+    "K/I/0",
+    "K/I/1",
+    "K/I/2",
+    "K/I/3"
+  ]
 }

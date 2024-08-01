@@ -1,0 +1,16 @@
+Invite User
+Marital Status
+Immigration Status
+Disabled Individual
+Disabled Spouse
+Contributing EPF?
+Employee EPF Setting
+Employer EPF Setting
+PCB Borne by Employer
+Socso Category
+Employment Insurance System(EIS)
+Contributing HRDF?
+Rate of Pay
+Currency of Salary
+Payment Method
+Payroll month to start applying accumulated deductions.

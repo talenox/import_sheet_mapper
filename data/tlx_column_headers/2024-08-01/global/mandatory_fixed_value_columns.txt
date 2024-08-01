@@ -1,0 +1,4 @@
+Invite User
+Rate of Pay
+Currency of Salary
+Payment Method

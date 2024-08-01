@@ -1,4 +1,5 @@
 {
+  "invite_user": ["YES", "NO"],
   "race": [
     "African",
     "African-American",
@@ -33,13 +34,6 @@
     "Free Thinker"
   ],
   "gender": ["Male", "Female"],
-  "marital status": [
-    "Single", 
-    "Widowed", 
-    "Separated",
-    "Married",
-    "Divorced"
-  ],
   "nationality": [
     "Afghan",
     "Albanian",
@@ -270,12 +264,12 @@
     "Zambian",
     "Zimbabwean"
   ],
-  "rate of pay": [
+  "rate_of_pay": [
     "Monthly",
     "Daily",
     "Hourly"
   ],
-  "currency of salary": [
+  "currency_of_salary": [
     "SGD",
     "HKD",
     "MYR",
@@ -312,7 +306,7 @@
     "KYD",
     "MOP"
   ],
-  "payment method": [
+  "payment_method": [
     "Cheque",
     "Cash",
     "Bank Transfer"

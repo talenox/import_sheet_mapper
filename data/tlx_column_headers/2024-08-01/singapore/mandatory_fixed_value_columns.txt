@@ -1,0 +1,8 @@
+Invite User
+Immigration Status
+Rate of Pay
+Currency of Salary
+Payment Method
+SHG Automation
+SHG Contribution
+Additional SHG Contribution
