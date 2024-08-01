@@ -251,8 +251,44 @@ def app(llm_model):
 if __name__ == "__main__":
   # st.session_state.clear()
   # Initialize the OpenAI client
-  llm_model = OpenAi()
+  # llm_model = OpenAi()
   
   # Initialize the Gemini client
   # llm_model = Gemini()
-  app(llm_model)
+  # app(llm_model)
+  def get_latest_directory_path(base_dir):
+    """Get the path to the latest directory based on date."""
+    # Get a list of directories (dates)
+    dates = [entry for entry in os.listdir(base_dir) if os.path.isdir(os.path.join(base_dir, entry))]
+    # Parse dates into datetime objects and identify the latest date
+    parsed_dates = [datetime.strptime(date, "%Y-%m-%d") for date in dates]
+    latest_date = max(parsed_dates)
+    # Return the path to the latest directory
+    return os.path.join(base_dir, latest_date.strftime("%Y-%m-%d"))
+
+  def normalize_csv_column_headers(base_dir, countries):
+    for country in countries:
+        # Construct file path
+        latest_contents_path = get_latest_directory_path(base_dir)
+        target_file = os.path.join(latest_contents_path, country, "column_headers.csv")
+
+        if not os.path.exists(target_file):
+            print(f"File not found: {target_file}")
+            continue
+        
+        # Load the CSV
+        df = pd.read_csv(target_file)
+        
+        # Normalize column names
+        df.columns = [normalise_column_name(col) for col in df.columns]
+        
+        # Save the normalized CSV back to the file or to a new file
+        normalized_file = os.path.join(latest_contents_path, country, "normalized_column_headers.csv")
+        df.to_csv(normalized_file, index=False)
+        print(f"Normalized column headers saved to: {normalized_file}")
+  countries = ['global', 'singapore', 'malaysia', 'indonesia', 'hong_kong']
+
+  # Normalize column headers for all countries
+  base_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data/tlx_column_headers')
+
+  normalize_csv_column_headers(base_dir, countries)

@@ -20,7 +20,7 @@ def update_column_headers(version):
       excel_file_path = os.path.join(import_sheets_folder, file_name)   
       headers = extract_headers_from_excel_file(excel_file_path, 2, sheet_name=0)
       # Construct the output CSV file path
-      csv_file_name = os.path.splitext(file_name)[0] + '_column_headers.csv'
+      csv_file_name = os.path.splitext(file_name)[0] + '_normalised_column_headers.csv'
       output_csv_path = os.path.join(folder_path, csv_file_name)
       # Write the headers to the CSV file
       with open(output_csv_path, 'w', newline='') as csvfile:
@@ -49,7 +49,7 @@ def load_json_file(filepath):
 def get_column_headers(country="singapore"):
   base_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../data/tlx_column_headers')
   latest_contents_path = get_latest_directory_path(base_dir)
-  target_file = os.path.join(latest_contents_path, country, "column_headers.csv")
+  target_file = os.path.join(latest_contents_path, country, "normalised_column_headers.csv")
 
   if os.path.isfile(target_file):
     with open(target_file, 'r') as file:
