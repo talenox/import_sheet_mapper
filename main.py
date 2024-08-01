@@ -36,6 +36,7 @@ def initialise_session_state_variables():
   st.session_state['mapped_data'] = pd.DataFrame()
   st.session_state['unmapped_columns_default_values_confirmed'] = False
   st.session_state['submit_column_value_mapping'] = False
+  st.session_state['column_header_name_normalised_mapping'] = {}
 
 def render_upload_file_widget():
   st.subheader("Choose a file")
@@ -65,6 +66,7 @@ def render_confirm_country_button(country):
     st.session_state['populate_import_sheet'] = None
     st.session_state['download_import_sheet'] = False
     st.session_state['submit_column_header_mappings'] = False
+    st.session_state['column_header_name_normalised_mapping'] = load_column_header_name_normalised_mapping()
 
 def get_column_header_mappings(llm_model, raw_data_headers, user_sample_values, country_specific_tlx_import_sheet_headers):
   country_specific_sample_values = get_sample_values(st.session_state.confirmed_country.lower().replace(" ", "_"))

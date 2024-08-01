@@ -91,3 +91,20 @@ def get_mandatory_columns(country="singapore"):
       return mandatory_columns
   else:
     return f"Not found in {latest_contents_path}"
+  
+def load_column_header_name_normalised_mapping():
+  # Get the confirmed country from session state
+  confirmed_country = st.session_state.confirmed_country
+  if confirmed_country:
+    base_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../data/tlx_column_headers')
+    latest_contents_path = get_latest_directory_path(base_dir)
+    target_file = os.path.join(latest_contents_path, confirmed_country, 'normalized_column_headers.json')
+
+    if os.path.isfile(target_file):
+      # Load the JSON data
+      with open(target_file, 'r') as jsonfile:
+        return json.load(jsonfile)
+    else:
+      raise FileNotFoundError(f"File not found: {target_file}")
+  else:
+    raise ValueError("No confirmed country in session state.")
