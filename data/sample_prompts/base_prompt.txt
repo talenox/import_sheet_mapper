@@ -19,4 +19,4 @@ Expected Output (in JSON format):
     }
   }
 }
-Provide only the JSON object in your reply without additional explanations, without any markdown formatting or code block delimiters.
+Provide only the JSON object in your reply without additional explanations, without any markdown formatting or code block delimiters. Do not suggest a mapping to a fixed column header that does not exist

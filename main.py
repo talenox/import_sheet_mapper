@@ -9,6 +9,7 @@ from data_processor.extractor import *
 from data_generator.tlx_column_header_mapper import *
 from helper_methods.mapper import *
 from helper_methods.display_mappings import *
+from helper_methods.normalise_string import *
 
 # Load environment variables from .env file
 load_dotenv()
@@ -31,12 +32,18 @@ def initialise_session_state_variables():
     st.session_state.download_import_sheet = False
   if 'previous_confirmed_country' not in st.session_state:
     st.session_state.previous_confirmed_country = None
-  st.session_state['consolidated_intial_value_mappings'] = {}
-  st.session_state['consolidated_corrected_value_mappings'] = {}
-  st.session_state['mapped_data'] = pd.DataFrame()
-  st.session_state['unmapped_columns_default_values_confirmed'] = False
-  st.session_state['submit_column_value_mapping'] = False
-  st.session_state['column_header_name_normalised_mapping'] = {}
+  if 'column_header_name_normalised_mapping' not in st.session_state:
+    st.session_state['column_header_name_normalised_mapping'] = {}
+  if 'consolidated_corrected_value_mappings' not in st.session_state:
+    st.session_state['consolidated_corrected_value_mappings'] = {}
+  if 'mapped_data' not in st.session_state:
+    st.session_state['mapped_data'] = pd.DataFrame()
+  if 'unmapped_columns_default_values_confirmed' not in st.session_state:
+    st.session_state['unmapped_columns_default_values_confirmed'] = False
+  if 'submit_column_value_mapping' not in st.session_state:
+    st.session_state['submit_column_value_mapping'] = False
+  if 'column_header_name_normalised_mapping' not in st.session_state:
+    st.session_state['column_header_name_normalised_mapping'] = {}
 
 def render_upload_file_widget():
   st.subheader("Choose a file")
@@ -71,47 +78,32 @@ def render_confirm_country_button(country):
 def get_column_header_mappings(llm_model, raw_data_headers, user_sample_values, country_specific_tlx_import_sheet_headers):
   country_specific_sample_values = get_sample_values(st.session_state.confirmed_country.lower().replace(" ", "_"))
   if st.session_state.initial_mappings is None:
-    initial_mappings = generate_column_header_mappings(llm_model, raw_data_headers, user_sample_values, country_specific_tlx_import_sheet_headers, country_specific_sample_values)
-    # initial_mappings = '''{
-    #   "EmployeeCode": "Employee ID",
-    #   "LastName": "Last Name",
-    #   "FirstName": "First Name",
-    #   "MiddleName": null,
-    #   "EmployeeName": null,
-    #   "AliasName": "Nickname",
-    #   "Gender": "Gender",
-    #   "Title": null,
-    #   "NationalityCode": "Nationality",
-    #   "BirthDate": "Birth Date (DD/MM/YYYY)",
-    #   "BirthPlace": null,
-    #   "RaceCode": "Race",
-    #   "ReligionCode": "Religion",
-    #   "MaritalStatus": "Marital Status",
-    #   "MarriageDate": null,
-    #   "Email": "Email",
-    #   "Funds": null,
-    #   "MOMOccupationCode": null,
-    #   "MOMEmployeeType": null,
-    #   "MOMOccupationGroup": null,
-    #   "MOMCategory": null,
-    #   "WorkDaysPerWeek": "Working Day",
-    #   "WorkHoursPerDay": "Working Hour",
-    #   "WorkHoursPerYear": null,
-    #   "BankAccountNo": "Bank Account No.",
-    #   "BankBranch": "Bank Branch No.",
-    #   "BankCode": null,
-    #   "BankCurrencyCode": null,
-    #   "CPFMethodCode": null,
-    #   "CPFEmployeeType": null,
-    #   "FWLCode": null,
-    #   "Suggestion": {
-    #     "SCF01": {
-    #       "column": "Chinese Name",
-    #       "explanation": "based on the context of providing an address"
-    #     }
-    #   }
-    # }
-    # '''
+    # initial_mappings = generate_column_header_mappings(llm_model, raw_data_headers, user_sample_values, st.session_state['column_header_name_normalised_mapping'].values(), country_specific_sample_values)
+    initial_mappings = '''{
+      "EmployeeCode": "Employee ID",
+      "LastName": "Last Name*",
+      "FirstName": "First Name*",
+      "EmployeeName": {
+        "column": "First Name*",
+        "explanation": "Based on the context of mapping employee names"
+      },
+      "Gender": "Gender",
+      "Title": "Job Title",
+      "NationalityCode": "Nationality",
+      "BirthDate": "Hired Date (DD/MM/YYYY)*",
+      "RaceCode": "Race",
+      "ReligionCode": "Religion",
+      "MaritalStatus": "Marital Status",
+      "Email": "Email",
+      "BankAccountNo": "Bank Account No.",
+      "BankBranch": "Bank Code",
+      "BankCurrencyCode": {
+        "column": "Currency of Salary",
+        "explanation": "Based on the context of mapping currency"
+      },
+      "SFC01": "Nickname"
+    }
+    '''
     initial_mappings_cleaned = initial_mappings.replace('\n', '')
     initial_mappings_json = json.loads(initial_mappings_cleaned)
     st.session_state['initial_mappings'] = initial_mappings_json
@@ -122,15 +114,16 @@ def get_column_header_mappings(llm_model, raw_data_headers, user_sample_values, 
 def render_review_column_header_mapping_widget(initial_mappings, country_specific_tlx_import_sheet_headers):
   st.header("Column Header Mappings")
   st.write("Please review and modify (if necessary) the proposed mappings:")
-  corrected_column_mappings = display_initial_mappings(initial_mappings, country_specific_tlx_import_sheet_headers, "corrected_column_mappings")
+  corrected_column_mappings = display_initial_column_mappings(initial_mappings, "corrected_column_mappings")
   return corrected_column_mappings
 
 def render_submit_column_header_mapping_button(corrected_column_mappings):
   if st.button("Submit Column Mappings"):
     st.session_state.submit_column_header_mappings = True
+    print(st.session_state['column_header_name_normalised_mapping'])
     st.write("Here are the confirmed column mappings.")
     with st.expander("Corrected Column Mappings:", expanded=False):
-      st.write("", corrected_column_mappings)
+      st.write("", st.session_state.corrected_column_mappings)
 
 def generate_initial_fixed_column_value_mapping_widget(llm_model, consolidated_accepted_column_values, data):
   for user_column, tlx_column in st.session_state.corrected_column_mappings.items():
@@ -143,22 +136,20 @@ def generate_initial_fixed_column_value_mapping_widget(llm_model, consolidated_a
         data[user_column].unique().tolist(),
         accepted_column_values
       )
-      # temp = {'Gender': {'M': 'Male', 'F': 'Female'}, 'Nationality': {'MYS': 'Malaysian', 'MMR': 'Myanmarese'}, 'Race': {'Chinese': 'Chinese', 'Other': 'Others'}, 'Religion': {'BUD': 'Buddhism', 'CHR': 'Christianity'},'Marital Status': {'S': 'Single', 'M': 'Married'}}
-      # initial_value_mappings = temp[tlx_column]
-      st.session_state['consolidated_corrected_value_mappings'][tlx_column] = initial_value_mappings
+      st.session_state['consolidated_corrected_value_mappings'][normalised_column_name] = initial_value_mappings
   return None
 
 def render_review_fixed_column_value_mapping_widget(corrected_column_mappings, consolidated_accepted_column_values, data):
   st.header("Column Value Mappings")
+  st.write("Please review and modify (if necessary) the proposed mappings:")
   for _, tlx_column in corrected_column_mappings.items():
     normalised_column_name = normalise_column_name(tlx_column)
     if normalised_column_name in consolidated_accepted_column_values:
       accepted_column_values = consolidated_accepted_column_values[normalised_column_name]
-      initial_value_mappings = st.session_state['consolidated_corrected_value_mappings'][tlx_column]
+      initial_value_mappings = st.session_state['consolidated_corrected_value_mappings'][normalised_column_name]
       
       st.subheader(f"{tlx_column}")
-      st.write("Please review and modify (if necessary) the proposed mappings:")
-      corrected_value_mappings = display_initial_mappings(
+      corrected_value_mappings = display_initial_value_mappings(
         initial_value_mappings,
         accepted_column_values,
         f"{tlx_column}_corrected_value_mappings"
@@ -173,15 +164,12 @@ def render_submit_fixed_column_value_mapping_button():
 def render_choose_default_value_for_required_columns_widget():
   st.header("Default Column Values")
   # list all the unmapped values that are in mandatory_fixed_value_columns.txt
-  mandatory_columns = get_mandatory_columns(st.session_state.confirmed_country)
-  mapped_columns = list(st.session_state.corrected_column_mappings.values())
-  unmapped_mandatory_columns = [normalise_column_name(column) for column in mandatory_columns if column not in mapped_columns]
+  mandatory_columns_normalized = [normalise_column_name(col) for col in get_mandatory_columns(st.session_state.confirmed_country)]
+  mapped_columns_normalized = [normalise_column_name(col) for col in list(st.session_state.corrected_column_mappings.values())]
+  unmapped_mandatory_columns = [normalise_column_name(column) for column in mandatory_columns_normalized if column not in mapped_columns_normalized]
   # pull the column dropdown values that are available
   column_dropdown_values = get_tlx_column_dropdown_values(st.session_state.confirmed_country)
-  # { 'invite_user': "Invite User" }
-  normalised_column_dropdown_headers_mapping = { normalise_column_name(column_name): column_name for column_name in unmapped_mandatory_columns }
-  # { "Invite User": ["YES", "NO"] }
-  filtered_json = { key: column_dropdown_values[normalised_column_dropdown_headers_mapping[key]] for key in unmapped_mandatory_columns if key in normalised_column_dropdown_headers_mapping.keys() }
+  filtered_json = { key: column_dropdown_values[key] for key in unmapped_mandatory_columns if key in column_dropdown_values.keys() }
   # for each of them, choose a default value from column_dropdown_values.json or shared_columndropdown_values.json 
   display_default_value_mappings(filtered_json, "unmapped_columns_default_value")
 
@@ -201,10 +189,6 @@ def render_final_import_sheet(uploaded_file, rows_to_skip, country_specific_tlx_
 
 def render_download_import_sheet_button():
   write_to_preformatted_excel(st.session_state.mapped_data, st.session_state.confirmed_country)
-
-def normalise_column_name(column):
-  column = column.lower().replace(' ', '_')
-  return re.sub(r'[^a-z0-9_]', '', column)
 
 def app(llm_model):
   st.title("Talenox's import sheet mapper")
@@ -228,9 +212,10 @@ def app(llm_model):
       country_specific_tlx_import_sheet_headers = get_column_headers(st.session_state.confirmed_country.lower().replace(" ", "_"))
       initial_mappings = get_column_header_mappings(llm_model, raw_data_headers, user_sample_values, country_specific_tlx_import_sheet_headers)
       # Step 6: Review proposed column header mappings by the LLM
-      st.session_state.corrected_column_mappings = render_review_column_header_mapping_widget(initial_mappings, country_specific_tlx_import_sheet_headers)
+      corrected_column_mappings = render_review_column_header_mapping_widget(initial_mappings, country_specific_tlx_import_sheet_headers)
       # Step 7: Submit confirmed header mappings
-      render_submit_column_header_mapping_button(st.session_state.corrected_column_mappings)
+      
+      render_submit_column_header_mapping_button(corrected_column_mappings)
       if st.session_state.submit_column_header_mappings:
         # Step 8: Choose default values for mandatory columns
         # Step 9: Generate and review value mapping based on column mappings
@@ -251,44 +236,8 @@ def app(llm_model):
 if __name__ == "__main__":
   # st.session_state.clear()
   # Initialize the OpenAI client
-  # llm_model = OpenAi()
+  llm_model = OpenAi()
   
   # Initialize the Gemini client
   # llm_model = Gemini()
-  # app(llm_model)
-  def get_latest_directory_path(base_dir):
-    """Get the path to the latest directory based on date."""
-    # Get a list of directories (dates)
-    dates = [entry for entry in os.listdir(base_dir) if os.path.isdir(os.path.join(base_dir, entry))]
-    # Parse dates into datetime objects and identify the latest date
-    parsed_dates = [datetime.strptime(date, "%Y-%m-%d") for date in dates]
-    latest_date = max(parsed_dates)
-    # Return the path to the latest directory
-    return os.path.join(base_dir, latest_date.strftime("%Y-%m-%d"))
-
-  def normalize_csv_column_headers(base_dir, countries):
-    for country in countries:
-        # Construct file path
-        latest_contents_path = get_latest_directory_path(base_dir)
-        target_file = os.path.join(latest_contents_path, country, "column_headers.csv")
-
-        if not os.path.exists(target_file):
-            print(f"File not found: {target_file}")
-            continue
-        
-        # Load the CSV
-        df = pd.read_csv(target_file)
-        
-        # Normalize column names
-        df.columns = [normalise_column_name(col) for col in df.columns]
-        
-        # Save the normalized CSV back to the file or to a new file
-        normalized_file = os.path.join(latest_contents_path, country, "normalized_column_headers.csv")
-        df.to_csv(normalized_file, index=False)
-        print(f"Normalized column headers saved to: {normalized_file}")
-  countries = ['global', 'singapore', 'malaysia', 'indonesia', 'hong_kong']
-
-  # Normalize column headers for all countries
-  base_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data/tlx_column_headers')
-
-  normalize_csv_column_headers(base_dir, countries)
+  app(llm_model)
