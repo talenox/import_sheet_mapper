@@ -96,3 +96,15 @@ def display_final_mapped_data(data, corrected_column_mappings, headers, correcte
   st.write("Mapped Data:")
   st.data_editor(mapped_data)
   return mapped_data
+
+def display_default_value_mappings(filtered_json, session_key):
+  if session_key not in st.session_state:
+    st.session_state[session_key] = {}
+  key = 0
+  with st.expander("Column Defaults", expanded=False):
+    for column_header, value_options in filtered_json.items():
+      user_input, corrected = create_input_and_selectbox(value_options, column_header, "", 0, f"{key}_column_default")
+      st.session_state[session_key][user_input] = corrected
+      key += 1
+
+  return st.session_state[session_key]

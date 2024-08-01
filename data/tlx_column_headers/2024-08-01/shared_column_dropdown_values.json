@@ -1,5 +1,5 @@
 {
-  "invite user": ["YES", "NO"],
+  "invite_user": ["YES", "NO"],
   "race": [
     "African",
     "African-American",
@@ -264,12 +264,12 @@
     "Zambian",
     "Zimbabwean"
   ],
-  "rate of pay": [
+  "rate_of_pay": [
     "Monthly",
     "Daily",
     "Hourly"
   ],
-  "currency of salary": [
+  "currency_of_salary": [
     "SGD",
     "HKD",
     "MYR",
@@ -306,7 +306,7 @@
     "KYD",
     "MOP"
   ],
-  "payment method": [
+  "payment_method": [
     "Cheque",
     "Cash",
     "Bank Transfer"

@@ -1,19 +1,8 @@
-First Name
-Last Name
-Statutory Name
 Invite User
-Birth Date (DD/MM/YYYY)
-Identification No
 Immigration Status
-Past Immigration Status
-Hired Date (DD/MM/YYYY)
-Working Day
-Working Hour
 Rate of Pay
 Currency of Salary
-Basic Salary
 Payment Method
 SHG Automation
 SHG Contribution
 Additional SHG Contribution
-CPF in lieu

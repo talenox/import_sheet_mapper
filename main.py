@@ -34,6 +34,8 @@ def initialise_session_state_variables():
   st.session_state['consolidated_intial_value_mappings'] = {}
   st.session_state['consolidated_corrected_value_mappings'] = {}
   st.session_state['mapped_data'] = pd.DataFrame()
+  st.session_state['unmapped_columns_default_values_confirmed'] = False
+  st.session_state['submit_column_value_mapping'] = False
 
 def render_upload_file_widget():
   st.subheader("Choose a file")
@@ -50,7 +52,7 @@ def render_uploaded_file_head_widget(sampled_df):
 def render_select_country_widget():
   st.subheader("Select Country")
   country = st.selectbox("Talenox has a differently formatted import sheet for each country.", options=COUNTRY_OPTIONS)
-  return country
+  return normalise_column_name(country)
 
 def render_confirm_country_button(country):
   if st.button("Confirm Country"):
@@ -162,9 +164,33 @@ def render_review_fixed_column_value_mapping_widget(corrected_column_mappings, c
       # Update the session state with the corrected mappings
       st.session_state['consolidated_corrected_value_mappings'][tlx_column] = corrected_value_mappings
 
+def render_submit_fixed_column_value_mapping_button():
+  if st.button("Submit Column Value Mappings"):
+    st.session_state.submit_column_value_mapping = True
+
+def render_choose_default_value_for_required_columns_widget():
+  st.header("Default Column Values")
+  # list all the unmapped values that are in mandatory_fixed_value_columns.txt
+  mandatory_columns = get_mandatory_columns(st.session_state.confirmed_country)
+  mapped_columns = list(st.session_state.corrected_column_mappings.values())
+  unmapped_mandatory_columns = [normalise_column_name(column) for column in mandatory_columns if column not in mapped_columns]
+  # pull the column dropdown values that are available
+  column_dropdown_values = get_tlx_column_dropdown_values(st.session_state.confirmed_country)
+  # { 'invite_user': "Invite User" }
+  normalised_column_dropdown_headers_mapping = { normalise_column_name(column_name): column_name for column_name in unmapped_mandatory_columns }
+  # { "Invite User": ["YES", "NO"] }
+  filtered_json = { key: column_dropdown_values[normalised_column_dropdown_headers_mapping[key]] for key in unmapped_mandatory_columns if key in normalised_column_dropdown_headers_mapping.keys() }
+  # for each of them, choose a default value from column_dropdown_values.json or shared_columndropdown_values.json 
+  display_default_value_mappings(filtered_json, "unmapped_columns_default_value")
+
+def render_confirm_unmapped_column_default_values_button():
+  if st.button("Confirm Default Values"):
+    st.session_state.unmapped_columns_default_values_confirmed = True
+
 def render_populate_import_sheet_button():
-  if st.button("Populate Import Sheet"):
-    st.session_state.populate_import_sheet = True
+  if st.session_state.unmapped_columns_default_values_confirmed:
+    if st.button("Populate Import Sheet"):
+      st.session_state.populate_import_sheet = True
 
 def render_final_import_sheet(uploaded_file, rows_to_skip, country_specific_tlx_import_sheet_headers):
   # Read the uploaded file again to get the full data
@@ -210,11 +236,15 @@ def app(llm_model):
         consolidated_accepted_column_values = get_tlx_column_dropdown_values(st.session_state.confirmed_country)
         generate_initial_fixed_column_value_mapping_widget(llm_model, consolidated_accepted_column_values, data)
         render_review_fixed_column_value_mapping_widget(st.session_state.corrected_column_mappings, consolidated_accepted_column_values, data)
-        render_populate_import_sheet_button()
-        if st.session_state.populate_import_sheet:
-          render_final_import_sheet(uploaded_file, rows_to_skip, country_specific_tlx_import_sheet_headers)
-          render_download_import_sheet_button()
-          
+        render_submit_fixed_column_value_mapping_button()
+        if st.session_state.submit_column_value_mapping:
+          render_choose_default_value_for_required_columns_widget()
+          render_confirm_unmapped_column_default_values_button()
+          render_populate_import_sheet_button()
+          if st.session_state.populate_import_sheet:
+            render_final_import_sheet(uploaded_file, rows_to_skip, country_specific_tlx_import_sheet_headers)
+            render_download_import_sheet_button()
+            
 
 if __name__ == "__main__":
   # st.session_state.clear()

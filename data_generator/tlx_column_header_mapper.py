@@ -26,98 +26,68 @@ def update_column_headers(version):
       with open(output_csv_path, 'w', newline='') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(headers)
+ 
+def get_latest_directory_path(base_dir):
+  """Get the path to the latest directory based on date."""
+  # Get a list of directories (dates)
+  dates = [entry for entry in os.listdir(base_dir) if os.path.isdir(os.path.join(base_dir, entry))]
+  # Parse dates into datetime objects and identify the latest date
+  parsed_dates = [datetime.strptime(date, "%Y-%m-%d") for date in dates]
+  latest_date = max(parsed_dates)
+  # Return the path to the latest directory
+  return os.path.join(base_dir, latest_date.strftime("%Y-%m-%d"))
+
+def load_json_file(filepath):
+  """Load a JSON file if it exists."""
+  if os.path.isfile(filepath):
+    with open(filepath, 'r') as file:
+      return json.load(file)
+  else:
+    print(f"File not found: {filepath}")
+    return {}
 
 def get_column_headers(country="singapore"):
-  # Define the directory path relative to this script's location
-  script_dir = os.path.dirname(os.path.abspath(__file__))
-  directory_path = os.path.join(script_dir, '../data/tlx_column_headers')
-  # Get a list of directories (dates)
-  dates = [entry for entry in os.listdir(directory_path) if os.path.isdir(os.path.join(directory_path, entry))]
-  # Parse dates into datetime objects
-  parsed_dates = [datetime.strptime(date, "%Y-%m-%d") for date in dates]
-  # Identify the latest date
-  latest_date = max(parsed_dates)
-  # Find the directory corresponding to the latest date
-  latest_directory = latest_date.strftime("%Y-%m-%d")
+  base_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../data/tlx_column_headers')
+  latest_contents_path = get_latest_directory_path(base_dir)
+  target_file = os.path.join(latest_contents_path, country, "column_headers.csv")
 
-  # Access the contents of the latest directory
-  latest_contents_path = os.path.join(directory_path, latest_directory, country)
-
-  # Define the path to the target CSV file
-  target_file = os.path.join(latest_contents_path, "column_headers.csv")
-
-  # Check if the target file exists and print its contents
   if os.path.isfile(target_file):
     with open(target_file, 'r') as file:
-      file_contents = file.read().split(',')
-      return(file_contents)
+      return file.read().split(',')
   else:
-    return(f"{country}.csv not found in {latest_contents_path}")
+    return f"{country}.csv not found in {latest_contents_path}"
 
-def get_tlx_column_dropdown_values(country):
-  # Define the directory path relative to this script's location
-  script_dir = os.path.dirname(os.path.abspath(__file__))
-  directory_path = os.path.join(script_dir, '../data/tlx_column_headers')
-  # Get a list of directories (dates)
-  dates = [entry for entry in os.listdir(directory_path) if os.path.isdir(os.path.join(directory_path, entry))]
-  # Parse dates into datetime objects
-  parsed_dates = [datetime.strptime(date, "%Y-%m-%d") for date in dates]
-  # Identify the latest date
-  latest_date = max(parsed_dates)
-  # Find the directory corresponding to the latest date
-  latest_directory = latest_date.strftime("%Y-%m-%d")
-  # Access the contents of the latest directory
-  latest_contents_path = os.path.join(directory_path, latest_directory)
-  # Define the path to the target CSV file
-  target_file = os.path.join(latest_contents_path, "shared_column_dropdown_values.json")
-  country_specific_target_file = os.path.join(latest_contents_path, f'{country}', 'column_dropdown_values.json')
-
-  # Check if the target file exists and print its contents
-  shared_data = {}
-  if os.path.isfile(target_file):
-    with open(target_file, 'r') as file:
-      shared_data = json.load(file)
-  else:
-    print(f"Shared file not found in {latest_contents_path}")
-    
-  # Load the country-specific JSON data
-  country_data = {}
-  if os.path.isfile(country_specific_target_file):
-    with open(country_specific_target_file, 'r') as file:
-      country_data = json.load(file)
-  else:
-    print(f"Country file not found in {os.path.join(script_dir, f'../data/tlx_column_headers/{country}')}")
+def get_tlx_column_dropdown_values(country="singapore"):
+  base_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../data/tlx_column_headers')
+  latest_contents_path = get_latest_directory_path(base_dir)
+  
+  shared_data = load_json_file(os.path.join(latest_contents_path, "shared_column_dropdown_values.json"))
+  country_data = load_json_file(os.path.join(latest_contents_path, country, "column_dropdown_values.json"))
+  
   # Combine the two dictionaries
   combined_data = {**shared_data, **country_data}
   return combined_data
 
 def get_sample_values(country="singapore"):
-  # Define the directory path relative to this script's location
-  script_dir = os.path.dirname(os.path.abspath(__file__))
-  directory_path = os.path.join(script_dir, '../data/tlx_column_headers')
+  base_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../data/tlx_column_headers')
+  latest_contents_path = get_latest_directory_path(base_dir)
+  target_file = os.path.join(latest_contents_path, country, 'sample_data.json')
   
-  # Get a list of directories (dates)
-  dates = [entry for entry in os.listdir(directory_path) if os.path.isdir(os.path.join(directory_path, entry))]
-  
-  # Parse dates into datetime objects
-  parsed_dates = [datetime.strptime(date, "%Y-%m-%d") for date in dates]
-  
-  # Identify the latest date
-  latest_date = max(parsed_dates)
-  
-  # Find the directory corresponding to the latest date
-  latest_directory = latest_date.strftime("%Y-%m-%d")
-  
-  # Access the contents of the latest directory
-  latest_contents_path = os.path.join(directory_path, latest_directory)
-  
-  # Define the path to the target JSON file
-  target_file = os.path.join(latest_contents_path, f"{country}_sample_data.json")
-  
-  # Check if the target file exists and load its contents
   if os.path.isfile(target_file):
     with open(target_file, 'r') as file:
       json_contents = json.load(file)
       return json.dumps(json_contents, ensure_ascii=False, indent=2)
   else:
     return f"{country}.json not found in {latest_contents_path}"
+  
+def get_mandatory_columns(country="singapore"):
+  base_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../data/tlx_column_headers')
+  latest_contents_path = get_latest_directory_path(base_dir)
+  target_file = os.path.join(latest_contents_path, country, 'mandatory_fixed_value_columns.txt')
+  
+  if os.path.isfile(target_file):
+    with open(target_file, 'r') as file:
+      mandatory_columns = file.read().splitlines()
+      return mandatory_columns
+  else:
+    return f"Not found in {latest_contents_path}"
