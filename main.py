@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 import json
 import streamlit as st
 import warnings
+from collections import Counter
 from llm_models.openai import OpenAi
 from llm_models.gemini import Gemini
 from data_processor.extractor import *
@@ -127,10 +128,26 @@ def render_review_column_header_mapping_widget(initial_mappings, country_specifi
 
 def render_submit_column_header_mapping_button(corrected_column_mappings):
   if st.button("Submit Column Mappings"):
-    st.session_state.submit_column_header_mappings = True
-    st.write("Here are the confirmed column mappings.")
-    with st.expander("Corrected Column Mappings:", expanded=False):
-      st.write("", st.session_state.corrected_column_mappings)
+    # here we should check if there are two user columns mapped to the same column header. if there are, we raise an error. otherwise, we continue as normal
+    mapping_duplicates = get_column_mapping_duplicates()
+    if len(mapping_duplicates) > 0:
+      error_message = "Duplicate values found in the column mappings:\n"
+      for value, count in mapping_duplicates.items():
+        error_message += f"- Value '{value}' is mapped to {count} different keys.\n"
+      st.error(error_message)
+    else:
+      st.session_state.submit_column_header_mappings = True
+      st.write("Here are the confirmed column mappings.")
+      with st.expander("Corrected Column Mappings:", expanded=False):
+        st.write("", st.session_state.corrected_column_mappings)
+
+# This method checks and returns any duplicates found in the column header mappings submitted by user
+def get_column_mapping_duplicates():
+  # Step 1: Count the occurrences of each value in the dictionary
+  value_counts = Counter(st.session_state.corrected_column_mappings.values())
+  # Step 2: Find the duplicate values (those with more than one occurrence)
+  duplicates = {value: count for value, count in value_counts.items() if count > 1 and value != ''}
+  return duplicates
 
 # This method hits the LLM to map values in fixed-value columns that have been mapped by the user
 def generate_initial_fixed_column_value_mapping_widget(llm_model, consolidated_accepted_column_values, data):

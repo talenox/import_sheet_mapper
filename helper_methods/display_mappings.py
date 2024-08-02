@@ -158,7 +158,7 @@ def display_final_mapped_data(data, corrected_column_mappings, headers, correcte
     if source_col in data.columns and target_col in headers:
       if target_col in fixed_value_columns:
         # Replace the values in the user's sheet with what it was mapped to
-        mapped_data[target_col] = data[source_col].apply(lambda x: corrected_value_mappings[target_col].get(x, x) if corrected_value_mappings[target_col].get(x, x) else x)
+        mapped_data[target_col] = data[source_col].apply(lambda x: corrected_value_mappings[target_col].get(x, x) if corrected_value_mappings[target_col].get(x, x) else '')
       else:
         mapped_data[target_col] = data[source_col]
   # Ensure all required headers are present, fill missing with empty strings
