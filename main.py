@@ -258,9 +258,15 @@ def app(llm_model):
             
 if __name__ == "__main__":
   # st.session_state.clear()
-  # Initialize the OpenAI client
-  llm_model = OpenAi()
-  
-  # Initialize the Gemini client
-  # llm_model = Gemini()
-  app(llm_model)
+  try:
+    # Initialize the OpenAI client
+    llm_model = OpenAi()
+    
+    # Initialize the Gemini client
+    # llm_model = Gemini()
+    app(llm_model)
+  except Exception as e:
+    # Catch any exception and handle it
+    error_message = f"An error occurred: {str(e)}  \n"
+    error_message += "\nPlease try again from the previous step."
+    st.error(error_message)
