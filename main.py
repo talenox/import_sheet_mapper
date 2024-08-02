@@ -78,32 +78,32 @@ def render_confirm_country_button(country):
 def get_column_header_mappings(llm_model, raw_data_headers, user_sample_values, country_specific_tlx_import_sheet_headers):
   country_specific_sample_values = get_sample_values(st.session_state.confirmed_country.lower().replace(" ", "_"))
   if st.session_state.initial_mappings is None:
-    # initial_mappings = generate_column_header_mappings(llm_model, raw_data_headers, user_sample_values, st.session_state['column_header_name_normalised_mapping'].values(), country_specific_sample_values)
-    initial_mappings = '''{
-      "EmployeeCode": "Employee ID",
-      "LastName": "Last Name*",
-      "FirstName": "First Name*",
-      "EmployeeName": {
-        "column": "First Name*",
-        "explanation": "Based on the context of mapping employee names"
-      },
-      "Gender": "Gender",
-      "Title": "Job Title",
-      "NationalityCode": "Nationality",
-      "BirthDate": "Hired Date (DD/MM/YYYY)*",
-      "RaceCode": "Race",
-      "ReligionCode": "Religion",
-      "MaritalStatus": "Marital Status",
-      "Email": "Email",
-      "BankAccountNo": "Bank Account No.",
-      "BankBranch": "Bank Code",
-      "BankCurrencyCode": {
-        "column": "Currency of Salary",
-        "explanation": "Based on the context of mapping currency"
-      },
-      "SFC01": "Nickname"
-    }
-    '''
+    initial_mappings = generate_column_header_mappings(llm_model, raw_data_headers, user_sample_values, st.session_state['column_header_name_normalised_mapping'].values(), country_specific_sample_values)
+    # initial_mappings = '''{
+    #   "EmployeeCode": "Employee ID",
+    #   "LastName": "Last Name*",
+    #   "FirstName": "First Name*",
+    #   "EmployeeName": {
+    #     "column": "First Name*",
+    #     "explanation": "Based on the context of mapping employee names"
+    #   },
+    #   "Gender": "Gender",
+    #   "Title": "Job Title",
+    #   "NationalityCode": "Nationality",
+    #   "BirthDate": "Hired Date (DD/MM/YYYY)*",
+    #   "RaceCode": "Race",
+    #   "ReligionCode": "Religion",
+    #   "MaritalStatus": "Marital Status",
+    #   "Email": "Email",
+    #   "BankAccountNo": "Bank Account No.",
+    #   "BankBranch": "Bank Code",
+    #   "BankCurrencyCode": {
+    #     "column": "Currency of Salary",
+    #     "explanation": "Based on the context of mapping currency"
+    #   },
+    #   "SFC01": "Nickname"
+    # }
+    # '''
     initial_mappings_cleaned = initial_mappings.replace('\n', '')
     initial_mappings_json = json.loads(initial_mappings_cleaned)
     st.session_state['initial_mappings'] = initial_mappings_json
@@ -120,7 +120,6 @@ def render_review_column_header_mapping_widget(initial_mappings, country_specifi
 def render_submit_column_header_mapping_button(corrected_column_mappings):
   if st.button("Submit Column Mappings"):
     st.session_state.submit_column_header_mappings = True
-    print(st.session_state['column_header_name_normalised_mapping'])
     st.write("Here are the confirmed column mappings.")
     with st.expander("Corrected Column Mappings:", expanded=False):
       st.write("", st.session_state.corrected_column_mappings)
@@ -176,15 +175,12 @@ def render_choose_default_value_for_required_columns_widget():
 def render_confirm_unmapped_column_default_values_button():
   if st.button("Confirm Default Values"):
     st.session_state.unmapped_columns_default_values_confirmed = True
-
-def render_populate_import_sheet_button():
   if st.session_state.unmapped_columns_default_values_confirmed:
-    if st.button("Populate Import Sheet"):
-      st.session_state.populate_import_sheet = True
+    st.session_state.populate_import_sheet = True
 
 def render_final_import_sheet(uploaded_file, rows_to_skip, country_specific_tlx_import_sheet_headers):
   # Read the uploaded file again to get the full data
-  data = pd.read_excel(uploaded_file, skiprows=rows_to_skip)
+  data = pd.read_excel(uploaded_file, skiprows=rows_to_skip, dtype="str")
   st.session_state.mapped_data = display_final_mapped_data(data, st.session_state.corrected_column_mappings, country_specific_tlx_import_sheet_headers[1:], st.session_state['consolidated_corrected_value_mappings'], st.session_state.confirmed_country)
 
 def render_download_import_sheet_button():
@@ -209,25 +205,24 @@ def app(llm_model):
     if st.session_state.confirmed_country:
       if st.session_state.previous_confirmed_country != st.session_state.confirmed_country:
         st.session_state.previous_confirmed_country = st.session_state.confirmed_country
+        st.session_state['initial_mappings'] = None
       country_specific_tlx_import_sheet_headers = get_column_headers(st.session_state.confirmed_country.lower().replace(" ", "_"))
       initial_mappings = get_column_header_mappings(llm_model, raw_data_headers, user_sample_values, country_specific_tlx_import_sheet_headers)
       # Step 6: Review proposed column header mappings by the LLM
       corrected_column_mappings = render_review_column_header_mapping_widget(initial_mappings, country_specific_tlx_import_sheet_headers)
       # Step 7: Submit confirmed header mappings
-      
       render_submit_column_header_mapping_button(corrected_column_mappings)
       if st.session_state.submit_column_header_mappings:
-        # Step 8: Choose default values for mandatory columns
-        # Step 9: Generate and review value mapping based on column mappings
+        # Step 8: Generate and review value mapping based on column mappings
         data = pd.read_excel(uploaded_file, skiprows=rows_to_skip)
         consolidated_accepted_column_values = get_tlx_column_dropdown_values(st.session_state.confirmed_country)
         generate_initial_fixed_column_value_mapping_widget(llm_model, consolidated_accepted_column_values, data)
         render_review_fixed_column_value_mapping_widget(st.session_state.corrected_column_mappings, consolidated_accepted_column_values, data)
         render_submit_fixed_column_value_mapping_button()
         if st.session_state.submit_column_value_mapping:
+          # Step 9: Choose default values for mandatory columns
           render_choose_default_value_for_required_columns_widget()
           render_confirm_unmapped_column_default_values_button()
-          render_populate_import_sheet_button()
           if st.session_state.populate_import_sheet:
             render_final_import_sheet(uploaded_file, rows_to_skip, country_specific_tlx_import_sheet_headers)
             render_download_import_sheet_button()

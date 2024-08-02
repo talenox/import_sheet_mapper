@@ -16,9 +16,23 @@ def display_initial_value_mappings(initial_mappings_json, fixed_values, session_
   key = 0
   
   # Separate items into categories
-  confirmed_mapping = {k: v for k, v in initial_mappings_json.items() if v is not None and not isinstance(v, dict)}
-  suggested_headers = {k: v for k, v in initial_mappings_json.items() if isinstance(v, dict)}
-  unmapped_headers = {k: v for k, v in initial_mappings_json.items() if v is None}
+  suggested_headers = {k: v for k, v in initial_mappings_json.items() if isinstance(v, dict) }
+  confirmed_mapping = {}
+  unmapped_headers = {}
+  # Separate items into categories
+  for user_value in initial_mappings_json.keys():
+    suggested_value = initial_mappings_json.get(user_value)
+    if isinstance(suggested_value, dict):
+      continue
+    else:
+      if suggested_value in fixed_values:
+        index = fixed_values.index(suggested_value)
+      else:
+        index = 0
+      if index == 0:
+        unmapped_headers[user_value] = suggested_value
+      else:
+        confirmed_mapping[user_value] = suggested_value
   
   if len(unmapped_headers) > 0:
     with st.expander("🔴 Unmapped Items", expanded=True):
@@ -153,6 +167,9 @@ def display_final_mapped_data(data, corrected_column_mappings, headers, correcte
         mapped_data[target_col] = data[source_col]
   # Ensure all required headers are present, fill missing with empty strings
   for header in headers:
+    if header in st.session_state.unmapped_columns_default_value.keys():
+      mapped_data[header] = st.session_state.unmapped_columns_default_value.get(header)
+      continue
     if header not in mapped_data.columns:
       mapped_data[header] = ''
   
@@ -165,9 +182,8 @@ def display_default_value_mappings(filtered_json, session_key):
   if session_key not in st.session_state:
     st.session_state[session_key] = {}
   key = 0
-  with st.expander("Column Defaults", expanded=False):
+  with st.expander("Column Defaults", expanded=True):
     for column_header, value_options in filtered_json.items():
-      print(st.session_state['column_header_name_normalised_mapping'])
       humanised_column_header = st.session_state['column_header_name_normalised_mapping'].get(column_header)
       user_input, corrected = create_input_and_selectbox(value_options, humanised_column_header, "", 0, f"{key}_column_default")
       st.session_state[session_key][user_input] = corrected
