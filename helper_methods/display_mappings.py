@@ -11,15 +11,13 @@ from helper_methods.normalise_string import *
 def display_initial_value_mappings(initial_mappings_json, fixed_values, session_key):
   if session_key not in st.session_state:
     st.session_state[session_key] = {}
-    
   fixed_values = [""] + fixed_values
   key = 0
-  
   # Separate items into categories
   suggested_headers = {k: v for k, v in initial_mappings_json.items() if isinstance(v, dict) }
   confirmed_mapping = {}
   unmapped_headers = {}
-  # Separate items into categories
+  # We use this loop instead of list comprehension to split confirmed and unmapped to acocunt for unintended LLM behaviour that may map to columns that do not exist
   for user_value in initial_mappings_json.keys():
     suggested_value = initial_mappings_json.get(user_value)
     if isinstance(suggested_value, dict):
@@ -76,11 +74,10 @@ def display_initial_value_mappings(initial_mappings_json, fixed_values, session_
 def display_initial_column_mappings(initial_mappings_json, session_key):
   humanised_fixed_values = [""] + list(st.session_state['column_header_name_normalised_mapping'].values())
   key = 0
-  
   suggested_headers = {k: v for k, v in initial_mappings_json.items() if isinstance(v, dict) }
   confirmed_mapping = {}
   unmapped_headers = {}
-  # Separate items into categories
+  # We use this loop instead of list comprehension to split confirmed and unmapped to acocunt for unintended LLM behaviour that may map to columns that do not exist
   for user_header in initial_mappings_json.keys():
     suggested_header = initial_mappings_json.get(user_header)
     if isinstance(suggested_header, dict):
@@ -132,7 +129,6 @@ def display_initial_column_mappings(initial_mappings_json, session_key):
         st.session_state[session_key][user_input] = corrected
         key += 1
 
-  
   return st.session_state[session_key]
 
 # This method creates the boxes to display the value mappings
@@ -178,6 +174,7 @@ def display_final_mapped_data(data, corrected_column_mappings, headers, correcte
   st.data_editor(mapped_data)
   return mapped_data
 
+# This method displays the dropdowns for user to choose the default value for mandatory columns in the import sheet that have not been mapped previously
 def display_default_value_mappings(filtered_json, session_key):
   if session_key not in st.session_state:
     st.session_state[session_key] = {}

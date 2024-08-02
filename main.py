@@ -19,6 +19,7 @@ warnings.filterwarnings("ignore", category=UserWarning, module="openpyxl")
 ####################################################
 COUNTRY_OPTIONS = ['SINGAPORE', 'MALAYSIA', 'HONG KONG', 'INDONESIA', 'GLOBAL']
 
+# This method initialises all the necessary variables at the start of the program
 def initialise_session_state_variables():
   if 'submit_column_header_mappings' not in st.session_state:
     st.session_state.submit_column_header_mappings = None
@@ -45,18 +46,22 @@ def initialise_session_state_variables():
   if 'column_header_name_normalised_mapping' not in st.session_state:
     st.session_state['column_header_name_normalised_mapping'] = {}
 
+# This method renders the Upload File section. Only excel sheets are supported at the moment
 def render_upload_file_widget():
   st.subheader("Choose a file")
   return st.file_uploader("Upload the file containing your data.", type=["xlsx", "xls"])
 
+# This method renders the section to allow users to set the header row of the sheet uploaded
 def render_sheet_skiprow_widget():
     rows_to_skip = st.number_input("Enter the number of rows to skip. For example, if your data starts on the 3rd row, then input 2.", min_value=1, value=1)
     return rows_to_skip
 
+# This method displays the first 5 rows of the uploaded sheet
 def render_uploaded_file_head_widget(sampled_df):
   st.write("File Uploaded Successfully.")
   st.write(sampled_df)
 
+# This method renders the dropdown for users to choose the country import sheet to map to
 def render_select_country_widget():
   st.subheader("Select Country")
   country = st.selectbox("Talenox has a differently formatted import sheet for each country.", options=COUNTRY_OPTIONS)
@@ -75,8 +80,10 @@ def render_confirm_country_button(country):
     st.session_state['submit_column_header_mappings'] = False
     st.session_state['column_header_name_normalised_mapping'] = load_column_header_name_normalised_mapping()
 
+# This method hits the LLM to generate the column header mappings
 def get_column_header_mappings(llm_model, raw_data_headers, user_sample_values, country_specific_tlx_import_sheet_headers):
   country_specific_sample_values = get_sample_values(st.session_state.confirmed_country.lower().replace(" ", "_"))
+  # Only hit the LLM if the session state does not already contain the mappings. When user changes country, initial_mappings will be reset, triggering the if block below
   if st.session_state.initial_mappings is None:
     initial_mappings = generate_column_header_mappings(llm_model, raw_data_headers, user_sample_values, st.session_state['column_header_name_normalised_mapping'].values(), country_specific_sample_values)
     # initial_mappings = '''{
@@ -111,6 +118,7 @@ def get_column_header_mappings(llm_model, raw_data_headers, user_sample_values, 
     initial_mappings_json = st.session_state['initial_mappings']
   return initial_mappings_json
 
+# This method renders the component to allow users to correct the initial mappings made by the LLM
 def render_review_column_header_mapping_widget(initial_mappings, country_specific_tlx_import_sheet_headers):
   st.header("Column Header Mappings")
   st.write("Please review and modify (if necessary) the proposed mappings:")
@@ -124,12 +132,12 @@ def render_submit_column_header_mapping_button(corrected_column_mappings):
     with st.expander("Corrected Column Mappings:", expanded=False):
       st.write("", st.session_state.corrected_column_mappings)
 
+# This method hits the LLM to map values in fixed-value columns that have been mapped by the user
 def generate_initial_fixed_column_value_mapping_widget(llm_model, consolidated_accepted_column_values, data):
   for user_column, tlx_column in st.session_state.corrected_column_mappings.items():
     normalised_column_name = normalise_column_name(tlx_column)
     if normalised_column_name in consolidated_accepted_column_values:
       accepted_column_values = consolidated_accepted_column_values[normalised_column_name]
-      # TODO Joshua remove this stub
       initial_value_mappings = generate_fixed_value_column_mappings(
         llm_model,
         data[user_column].unique().tolist(),
@@ -138,6 +146,7 @@ def generate_initial_fixed_column_value_mapping_widget(llm_model, consolidated_a
       st.session_state['consolidated_corrected_value_mappings'][normalised_column_name] = initial_value_mappings
   return None
 
+# This method renders the component to allow users to correct the value mappings made by the LLM
 def render_review_fixed_column_value_mapping_widget(corrected_column_mappings, consolidated_accepted_column_values, data):
   st.header("Column Value Mappings")
   st.write("Please review and modify (if necessary) the proposed mappings:")
@@ -160,6 +169,7 @@ def render_submit_fixed_column_value_mapping_button():
   if st.button("Submit Column Value Mappings"):
     st.session_state.submit_column_value_mapping = True
 
+# This method renders the component to allow users to choose the default value for mandatory columns that have not been mapped
 def render_choose_default_value_for_required_columns_widget():
   st.header("Default Column Values")
   # list all the unmapped values that are in mandatory_fixed_value_columns.txt
@@ -178,11 +188,13 @@ def render_confirm_unmapped_column_default_values_button():
   if st.session_state.unmapped_columns_default_values_confirmed:
     st.session_state.populate_import_sheet = True
 
+# This method renders the first few rows of the final import sheet after the data has been ported over
 def render_final_import_sheet(uploaded_file, rows_to_skip, country_specific_tlx_import_sheet_headers):
   # Read the uploaded file again to get the full data
   data = pd.read_excel(uploaded_file, skiprows=rows_to_skip, dtype="str")
   st.session_state.mapped_data = display_final_mapped_data(data, st.session_state.corrected_column_mappings, country_specific_tlx_import_sheet_headers[1:], st.session_state['consolidated_corrected_value_mappings'], st.session_state.confirmed_country)
 
+# This method prepares the final excel sheet to be downloaded by user
 def render_download_import_sheet_button():
   write_to_preformatted_excel(st.session_state.mapped_data, st.session_state.confirmed_country)
 
@@ -227,7 +239,6 @@ def app(llm_model):
             render_final_import_sheet(uploaded_file, rows_to_skip, country_specific_tlx_import_sheet_headers)
             render_download_import_sheet_button()
             
-
 if __name__ == "__main__":
   # st.session_state.clear()
   # Initialize the OpenAI client
