@@ -8,3 +8,6 @@ __pycache__/
 venv/
 
 scrap.txt
+
+# Streamlit secrets
+.streamlit/
