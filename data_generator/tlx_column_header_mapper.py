@@ -20,15 +20,15 @@ def update_column_headers(version):
       excel_file_path = os.path.join(import_sheets_folder, file_name)   
       headers = extract_headers_from_excel_file(excel_file_path, 2, sheet_name=0)
       # Construct the output CSV file path
-      csv_file_name = os.path.splitext(file_name)[0] + '_column_headers.csv'
+      csv_file_name = os.path.splitext(file_name)[0] + '_normalised_column_headers.csv'
       output_csv_path = os.path.join(folder_path, csv_file_name)
       # Write the headers to the CSV file
       with open(output_csv_path, 'w', newline='') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(headers)
  
+# This method gets the latest directory path indicated by the date of the folder 
 def get_latest_directory_path(base_dir):
-  """Get the path to the latest directory based on date."""
   # Get a list of directories (dates)
   dates = [entry for entry in os.listdir(base_dir) if os.path.isdir(os.path.join(base_dir, entry))]
   # Parse dates into datetime objects and identify the latest date
@@ -37,6 +37,7 @@ def get_latest_directory_path(base_dir):
   # Return the path to the latest directory
   return os.path.join(base_dir, latest_date.strftime("%Y-%m-%d"))
 
+# This method loads the json file
 def load_json_file(filepath):
   """Load a JSON file if it exists."""
   if os.path.isfile(filepath):
@@ -46,10 +47,11 @@ def load_json_file(filepath):
     print(f"File not found: {filepath}")
     return {}
 
+# This method reads the country-specific csv and extracts the column headers for mapping from it
 def get_column_headers(country="singapore"):
   base_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../data/tlx_column_headers')
   latest_contents_path = get_latest_directory_path(base_dir)
-  target_file = os.path.join(latest_contents_path, country, "column_headers.csv")
+  target_file = os.path.join(latest_contents_path, country, "normalised_column_headers.csv")
 
   if os.path.isfile(target_file):
     with open(target_file, 'r') as file:
@@ -57,17 +59,17 @@ def get_column_headers(country="singapore"):
   else:
     return f"{country}.csv not found in {latest_contents_path}"
 
+# This method retrieves the values for fixed-value columns in Talenox's import sheet (shared and country specific columns)
 def get_tlx_column_dropdown_values(country="singapore"):
   base_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../data/tlx_column_headers')
   latest_contents_path = get_latest_directory_path(base_dir)
-  
   shared_data = load_json_file(os.path.join(latest_contents_path, "shared_column_dropdown_values.json"))
   country_data = load_json_file(os.path.join(latest_contents_path, country, "column_dropdown_values.json"))
-  
   # Combine the two dictionaries
   combined_data = {**shared_data, **country_data}
   return combined_data
 
+# This method retrieves the json containing sample values for each country's import sheet
 def get_sample_values(country="singapore"):
   base_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../data/tlx_column_headers')
   latest_contents_path = get_latest_directory_path(base_dir)
@@ -79,7 +81,8 @@ def get_sample_values(country="singapore"):
       return json.dumps(json_contents, ensure_ascii=False, indent=2)
   else:
     return f"{country}.json not found in {latest_contents_path}"
-  
+
+# This method retireves the mandatory fixed-value columns for each country (used for column default value mapping)
 def get_mandatory_columns(country="singapore"):
   base_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../data/tlx_column_headers')
   latest_contents_path = get_latest_directory_path(base_dir)
@@ -91,3 +94,21 @@ def get_mandatory_columns(country="singapore"):
       return mandatory_columns
   else:
     return f"Not found in {latest_contents_path}"
+  
+# This method loads the mapping of the normalised and humanised column names
+def load_column_header_name_normalised_mapping():
+  # Get the confirmed country from session state
+  confirmed_country = st.session_state.confirmed_country
+  if confirmed_country:
+    base_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../data/tlx_column_headers')
+    latest_contents_path = get_latest_directory_path(base_dir)
+    target_file = os.path.join(latest_contents_path, confirmed_country, 'normalized_column_headers.json')
+
+    if os.path.isfile(target_file):
+      # Load the JSON data
+      with open(target_file, 'r') as jsonfile:
+        return json.load(jsonfile)
+    else:
+      raise FileNotFoundError(f"File not found: {target_file}")
+  else:
+    raise ValueError("No confirmed country in session state.")

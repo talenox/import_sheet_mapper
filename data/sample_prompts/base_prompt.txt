@@ -1,4 +1,4 @@
-I have a task for you involving column header mapping. I will provide you with a string of header column names given as user input, and I have a list of fixed column header names to map them to. Your task is to map each user-provided header column name to the closest matching fixed column header name based on the header names as well as the sample values for each column provided. If there is an exact match, return it. If not, find the closest one and return it in a separate json called "Suggestion". One fixed header column can only be mapped to not more than one user input header column and vice versa.
+I have a task for you involving column header mapping. I will provide you with a string of header column names given as user input, and I have a list of fixed column header names to map them to. Your task is to map each user-provided header column name to the closest matching fixed column header name based on the header names as well as the sample values for each column provided. If there is an exact match, return it. If not, find the closest one and return it in a dictionary format with the column name and an explanation as items in it. One fixed header column can only be mapped to not more than one user input header column and vice versa. Exact matches do not require explanations.
 
 Important: Ensure that the context of the headers is taken into consideration by analyzing both the header names and the sample values. Do not map columns with different contextual meanings.
 
@@ -12,11 +12,9 @@ Expected Output (in JSON format):
 {
   "Full Name": "First Name*",
   "Full Name": "Last Name*",
-  "Suggestion": {
-    "Address": {
-      column: "Mailing Address",
-      explanation: "based on the context of providing an address"
-    }
+  "Address": {
+    column: "Mailing Address",
+    explanation: "based on the context of providing an address"
   }
 }
-Provide only the JSON object in your reply without additional explanations, without any markdown formatting or code block delimiters.
+Provide only the JSON object in your reply without additional explanations, without any markdown formatting or code block delimiters. Do not suggest a mapping to a fixed column header that does not exist
