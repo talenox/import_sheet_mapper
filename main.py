@@ -252,9 +252,9 @@ def app(llm_model):
           # Step 9: Choose default values for mandatory columns
           render_choose_default_value_for_required_columns_widget()
           render_confirm_unmapped_column_default_values_button()
-          if st.session_state.populate_import_sheet:
-            render_final_import_sheet(uploaded_file, rows_to_skip, country_specific_tlx_import_sheet_headers)
-            render_download_import_sheet_button()
+        if st.session_state.populate_import_sheet:
+          render_final_import_sheet(uploaded_file, rows_to_skip, country_specific_tlx_import_sheet_headers)
+          render_download_import_sheet_button()
             
 if __name__ == "__main__":
   # st.session_state.clear()
