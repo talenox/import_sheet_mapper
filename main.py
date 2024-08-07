@@ -222,11 +222,7 @@ def render_back_button():
     elif st.session_state.app_state == AppState.display_download_import_sheet_button:
       st.session_state.app_state = AppState.display_column_default_value_selector
     st.rerun()
-
-def clear_placeholders(placeholders):
-  for placeholder in placeholders:
-    placeholder.empty()
-
+  
 def app(llm_model):
   st.title("Talenox's import sheet mapper")
   initialise_session_state_variables()
