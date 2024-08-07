@@ -208,11 +208,11 @@ def render_download_import_sheet_button():
 def app(llm_model):
   st.title("Talenox's import sheet mapper")
   initialise_session_state_variables()
-  print(f"Start: {st.session_state.app_state}")
   # Step 1: Upload file
   if st.session_state.app_state.value == AppState.display_file_uploader.value:
     render_upload_file_widget()
   # Step 2: Render country selector
+  print(f"Start: {st.session_state.app_state}")
   if st.session_state.app_state.value == AppState.display_country_selector.value:
     # Step 2.1: Check that the file has been read correctly
     st.session_state.rows_to_skip = render_sheet_skiprow_widget()
@@ -222,6 +222,7 @@ def app(llm_model):
     # Step 2.2: Choose country
     country = render_select_country_widget()
     render_confirm_country_button(country)
+  print(f"End: {st.session_state.app_state}")
   # Step 3: Generate column header mappings
   if st.session_state.app_state.value == AppState.display_column_header_mapping.value:
     if st.session_state.previous_confirmed_country != st.session_state.confirmed_country:
@@ -244,10 +245,11 @@ def app(llm_model):
   if st.session_state.app_state.value == AppState.display_column_default_value_selector.value:
     render_choose_default_value_for_required_columns_widget()
     render_confirm_unmapped_column_default_values_button()
+  # Step 6: Prepare file for download
   if st.session_state.app_state.value == AppState.display_download_import_sheet_button.value:
     render_final_import_sheet(st.session_state.uploaded_file, st.session_state.rows_to_skip, st.session_state.country_specific_tlx_import_sheet_headers)
     render_download_import_sheet_button()
-  print(f"End: {st.session_state.app_state}")
+
 if __name__ == "__main__":
   # st.session_state.clear()
   try:
