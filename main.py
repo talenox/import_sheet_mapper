@@ -11,6 +11,7 @@ from data_generator.tlx_column_header_mapper import *
 from helper_methods.mapper import *
 from helper_methods.display_mappings import *
 from helper_methods.normalise_string import *
+from app_state import AppState
 
 # Load environment variables from .env file
 load_dotenv()
@@ -22,6 +23,10 @@ COUNTRY_OPTIONS = ['SINGAPORE', 'MALAYSIA', 'HONG KONG', 'INDONESIA', 'GLOBAL']
 
 # This method initialises all the necessary variables at the start of the program
 def initialise_session_state_variables():
+  if 'app_state' not in st.session_state:
+    st.session_state.app_state = AppState.display_file_uploader
+  if 'uploaded_file' not in st.session_state:
+    st.session_state.uploaded_file = None
   if 'submit_column_header_mappings' not in st.session_state:
     st.session_state.submit_column_header_mappings = None
   if 'confirmed_country' not in st.session_state:
@@ -50,7 +55,10 @@ def initialise_session_state_variables():
 # This method renders the Upload File section. Only excel sheets are supported at the moment
 def render_upload_file_widget():
   st.subheader("Choose a file")
-  return st.file_uploader("Upload the file containing your data.", type=["xlsx", "xls"])
+  uploaded_file = st.file_uploader("Upload the file containing your data.", type=["xlsx", "xls"])
+  if uploaded_file is not None:
+    st.session_state.uploaded_file = uploaded_file
+    st.session_state.app_state = AppState.display_country_selector
 
 # This method renders the section to allow users to set the header row of the sheet uploaded
 def render_sheet_skiprow_widget():
@@ -86,32 +94,32 @@ def get_column_header_mappings(llm_model, raw_data_headers, user_sample_values, 
   country_specific_sample_values = get_sample_values(st.session_state.confirmed_country.lower().replace(" ", "_"))
   # Only hit the LLM if the session state does not already contain the mappings. When user changes country, initial_mappings will be reset, triggering the if block below
   if st.session_state.initial_mappings is None:
-    initial_mappings = generate_column_header_mappings(llm_model, raw_data_headers, user_sample_values, st.session_state['column_header_name_normalised_mapping'].values(), country_specific_sample_values)
-    # initial_mappings = '''{
-    #   "EmployeeCode": "Employee ID",
-    #   "LastName": "Last Name*",
-    #   "FirstName": "First Name*",
-    #   "EmployeeName": {
-    #     "column": "First Name*",
-    #     "explanation": "Based on the context of mapping employee names"
-    #   },
-    #   "Gender": "Gender",
-    #   "Title": "Job Title",
-    #   "NationalityCode": "Nationality",
-    #   "BirthDate": "Hired Date (DD/MM/YYYY)*",
-    #   "RaceCode": "Race",
-    #   "ReligionCode": "Religion",
-    #   "MaritalStatus": "Marital Status",
-    #   "Email": "Email",
-    #   "BankAccountNo": "Bank Account No.",
-    #   "BankBranch": "Bank Code",
-    #   "BankCurrencyCode": {
-    #     "column": "Currency of Salary",
-    #     "explanation": "Based on the context of mapping currency"
-    #   },
-    #   "SFC01": "Nickname"
-    # }
-    # '''
+    # initial_mappings = generate_column_header_mappings(llm_model, raw_data_headers, user_sample_values, st.session_state['column_header_name_normalised_mapping'].values(), country_specific_sample_values)
+    initial_mappings = '''{
+      "EmployeeCode": "Employee ID",
+      "LastName": "Last Name*",
+      "FirstName": "First Name*",
+      "EmployeeName": {
+        "column": "First Name*",
+        "explanation": "Based on the context of mapping employee names"
+      },
+      "Gender": "Gender",
+      "Title": "Job Title",
+      "NationalityCode": "Nationality",
+      "BirthDate": "Hired Date (DD/MM/YYYY)*",
+      "RaceCode": "Race",
+      "ReligionCode": "Religion",
+      "MaritalStatus": "Marital Status",
+      "Email": "Email",
+      "BankAccountNo": "Bank Account No.",
+      "BankBranch": "Bank Code",
+      "BankCurrencyCode": {
+        "column": "Currency of Salary",
+        "explanation": "Based on the context of mapping currency"
+      },
+      "SFC01": "Nickname"
+    }
+    '''
     initial_mappings_cleaned = initial_mappings.replace('\n', '')
     initial_mappings_json = json.loads(initial_mappings_cleaned)
     st.session_state['initial_mappings'] = initial_mappings_json
@@ -219,12 +227,13 @@ def app(llm_model):
   st.title("Talenox's import sheet mapper")
   initialise_session_state_variables()
   # Step 1: Upload file
-  uploaded_file = render_upload_file_widget()
+  if st.session_state.app_state == AppState.display_file_uploader:
+    render_upload_file_widget()
   # Step 2: Check that the file has been read correctly
-  if uploaded_file is not None:
+  if st.session_state.uploaded_file is not None:
     rows_to_skip = render_sheet_skiprow_widget()
-    sampled_df, raw_data_headers = extract_header_and_sample_data(uploaded_file, rows_to_skip)
-    user_sample_values = extract_unique_sample_values(uploaded_file, rows_to_skip, sheet_name=0)
+    sampled_df, raw_data_headers = extract_header_and_sample_data(st.session_state.uploaded_file, rows_to_skip)
+    user_sample_values = extract_unique_sample_values(st.session_state.uploaded_file, rows_to_skip, sheet_name=0)
     render_uploaded_file_head_widget(sampled_df)
     # Step 3: Choose country
     country = render_select_country_widget()
@@ -243,7 +252,7 @@ def app(llm_model):
       render_submit_column_header_mapping_button(corrected_column_mappings)
       if st.session_state.submit_column_header_mappings:
         # Step 8: Generate and review value mapping based on column mappings
-        data = pd.read_excel(uploaded_file, skiprows=rows_to_skip)
+        data = pd.read_excel(st.session_state.uploaded_file, skiprows=rows_to_skip)
         consolidated_accepted_column_values = get_tlx_column_dropdown_values(st.session_state.confirmed_country)
         generate_initial_fixed_column_value_mapping_widget(llm_model, consolidated_accepted_column_values, data)
         render_review_fixed_column_value_mapping_widget(st.session_state.corrected_column_mappings, consolidated_accepted_column_values, data)
