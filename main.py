@@ -205,6 +205,23 @@ def render_final_import_sheet(uploaded_file, rows_to_skip, country_specific_tlx_
 def render_download_import_sheet_button():
   write_to_preformatted_excel(st.session_state.mapped_data, st.session_state.confirmed_country)
 
+# This method renders a back button for users to go back to the previous step
+def render_back_button():
+  if st.session_state.app_state == AppState.display_file_uploader:
+    return None 
+  if st.button("Back"):
+    # Move to the previous state based on the current state
+    if st.session_state.app_state == AppState.display_country_selector:
+      st.session_state.app_state = AppState.display_file_uploader
+    elif st.session_state.app_state == AppState.display_column_header_mapping:
+      st.session_state.app_state = AppState.display_country_selector
+    elif st.session_state.app_state == AppState.display_column_value_mapping:
+      st.session_state.app_state = AppState.display_column_header_mapping
+    elif st.session_state.app_state == AppState.display_column_default_value_selector:
+      st.session_state.app_state = AppState.display_column_value_mapping
+    elif st.session_state.app_state == AppState.display_download_import_sheet_button:
+      st.session_state.app_state = AppState.display_column_default_value_selector
+
 def app(llm_model):
   st.title("Talenox's import sheet mapper")
   initialise_session_state_variables()
@@ -249,6 +266,7 @@ def app(llm_model):
   if st.session_state.app_state.value == AppState.display_download_import_sheet_button.value:
     render_final_import_sheet(st.session_state.uploaded_file, st.session_state.rows_to_skip, st.session_state.country_specific_tlx_import_sheet_headers)
     render_download_import_sheet_button()
+  render_back_button()
 
 if __name__ == "__main__":
   # st.session_state.clear()
