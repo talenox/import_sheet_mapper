@@ -27,16 +27,10 @@ def initialise_session_state_variables():
     st.session_state.app_state = AppState.display_file_uploader
   if 'uploaded_file' not in st.session_state:
     st.session_state.uploaded_file = None
-  if 'submit_column_header_mappings' not in st.session_state:
-    st.session_state.submit_column_header_mappings = None
   if 'confirmed_country' not in st.session_state:
     st.session_state.confirmed_country = None
-  if 'populate_import_sheet' not in st.session_state:
-    st.session_state.populate_import_sheet = None
   if 'corrected_column_mappings' not in st.session_state:
     st.session_state.corrected_column_mappings = {}
-  if 'download_import_sheet' not in st.session_state:
-    st.session_state.download_import_sheet = False
   if 'previous_confirmed_country' not in st.session_state:
     st.session_state.previous_confirmed_country = None
   if 'column_header_name_normalised_mapping' not in st.session_state:
@@ -45,10 +39,6 @@ def initialise_session_state_variables():
     st.session_state['consolidated_corrected_value_mappings'] = {}
   if 'mapped_data' not in st.session_state:
     st.session_state['mapped_data'] = pd.DataFrame()
-  if 'unmapped_columns_default_values_confirmed' not in st.session_state:
-    st.session_state['unmapped_columns_default_values_confirmed'] = False
-  if 'submit_column_value_mapping' not in st.session_state:
-    st.session_state['submit_column_value_mapping'] = False
   if 'column_header_name_normalised_mapping' not in st.session_state:
     st.session_state['column_header_name_normalised_mapping'] = {}
 
@@ -84,10 +74,8 @@ def render_confirm_country_button(country):
     st.session_state['consolidated_corrected_value_mappings'] = {}
     st.session_state['mapped_data'] = pd.DataFrame()
     st.session_state['initial_mappings'] = None
-    st.session_state['populate_import_sheet'] = None
-    st.session_state['download_import_sheet'] = False
-    st.session_state['submit_column_header_mappings'] = False
     st.session_state['column_header_name_normalised_mapping'] = load_column_header_name_normalised_mapping()
+    st.session_state.app_state = AppState.display_column_header_mapping
 
 # This method hits the LLM to generate the column header mappings
 def get_column_header_mappings(llm_model, raw_data_headers, user_sample_values, country_specific_tlx_import_sheet_headers):
@@ -229,42 +217,42 @@ def app(llm_model):
   # Step 1: Upload file
   if st.session_state.app_state == AppState.display_file_uploader:
     render_upload_file_widget()
-  # Step 2: Check that the file has been read correctly
-  if st.session_state.uploaded_file is not None:
+  # Step 2: Render country selector
+  if st.session_state.app_state == AppState.display_country_selector:
+    # Step 2.1: Check that the file has been read correctly
     rows_to_skip = render_sheet_skiprow_widget()
     sampled_df, raw_data_headers = extract_header_and_sample_data(st.session_state.uploaded_file, rows_to_skip)
     user_sample_values = extract_unique_sample_values(st.session_state.uploaded_file, rows_to_skip, sheet_name=0)
     render_uploaded_file_head_widget(sampled_df)
-    # Step 3: Choose country
+    # Step 2.2: Choose country
     country = render_select_country_widget()
-    # Step 4: Confirm country
     render_confirm_country_button(country)
-    # Step 5: Generate column header mappings
-    if st.session_state.confirmed_country:
-      if st.session_state.previous_confirmed_country != st.session_state.confirmed_country:
-        st.session_state.previous_confirmed_country = st.session_state.confirmed_country
-        st.session_state['initial_mappings'] = None
-      country_specific_tlx_import_sheet_headers = get_column_headers(st.session_state.confirmed_country.lower().replace(" ", "_"))
-      initial_mappings = get_column_header_mappings(llm_model, raw_data_headers, user_sample_values, country_specific_tlx_import_sheet_headers)
-      # Step 6: Review proposed column header mappings by the LLM
-      corrected_column_mappings = render_review_column_header_mapping_widget(initial_mappings, country_specific_tlx_import_sheet_headers)
-      # Step 7: Submit confirmed header mappings
-      render_submit_column_header_mapping_button(corrected_column_mappings)
-      if st.session_state.submit_column_header_mappings:
-        # Step 8: Generate and review value mapping based on column mappings
-        data = pd.read_excel(st.session_state.uploaded_file, skiprows=rows_to_skip)
-        consolidated_accepted_column_values = get_tlx_column_dropdown_values(st.session_state.confirmed_country)
-        generate_initial_fixed_column_value_mapping_widget(llm_model, consolidated_accepted_column_values, data)
-        render_review_fixed_column_value_mapping_widget(st.session_state.corrected_column_mappings, consolidated_accepted_column_values, data)
-        render_submit_fixed_column_value_mapping_button()
-        if st.session_state.submit_column_value_mapping:
-          # Step 9: Choose default values for mandatory columns
-          render_choose_default_value_for_required_columns_widget()
-          render_confirm_unmapped_column_default_values_button()
-        if st.session_state.populate_import_sheet:
-          render_final_import_sheet(uploaded_file, rows_to_skip, country_specific_tlx_import_sheet_headers)
-          render_download_import_sheet_button()
-            
+  # Step 3: Generate column header mappings
+  if st.session_state.app_state == AppState.display_column_header_mapping:
+    if st.session_state.previous_confirmed_country != st.session_state.confirmed_country:
+      st.session_state.previous_confirmed_country = st.session_state.confirmed_country
+      st.session_state['initial_mappings'] = None
+    country_specific_tlx_import_sheet_headers = get_column_headers(st.session_state.confirmed_country.lower().replace(" ", "_"))
+    initial_mappings = get_column_header_mappings(llm_model, raw_data_headers, user_sample_values, country_specific_tlx_import_sheet_headers)
+    # Step 6: Review proposed column header mappings by the LLM
+    corrected_column_mappings = render_review_column_header_mapping_widget(initial_mappings, country_specific_tlx_import_sheet_headers)
+    # Step 7: Submit confirmed header mappings
+    render_submit_column_header_mapping_button(corrected_column_mappings)
+  if st.session_state.app_state == AppState.display_column_value_mapping:
+    # Step 8: Generate and review value mapping based on column mappings
+    data = pd.read_excel(st.session_state.uploaded_file, skiprows=rows_to_skip)
+    consolidated_accepted_column_values = get_tlx_column_dropdown_values(st.session_state.confirmed_country)
+    generate_initial_fixed_column_value_mapping_widget(llm_model, consolidated_accepted_column_values, data)
+    render_review_fixed_column_value_mapping_widget(st.session_state.corrected_column_mappings, consolidated_accepted_column_values, data)
+    render_submit_fixed_column_value_mapping_button()
+  if st.session_state.app_state == AppState.display_column_default_value_selector:
+    # Step 9: Choose default values for mandatory columns
+    render_choose_default_value_for_required_columns_widget()
+    render_confirm_unmapped_column_default_values_button()
+  if st.session_state.app_state == AppState.display_download_import_sheet_button:
+    render_final_import_sheet(st.session_state.uploaded_file, rows_to_skip, country_specific_tlx_import_sheet_headers)
+    render_download_import_sheet_button()
+          
 if __name__ == "__main__":
   # st.session_state.clear()
   try:
