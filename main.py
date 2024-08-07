@@ -87,10 +87,6 @@ def get_column_header_mappings(llm_model, raw_data_headers, user_sample_values, 
       "EmployeeCode": "Employee ID",
       "LastName": "Last Name*",
       "FirstName": "First Name*",
-      "EmployeeName": {
-        "column": "First Name*",
-        "explanation": "Based on the context of mapping employee names"
-      },
       "Gender": "Gender",
       "Title": "Job Title",
       "NationalityCode": "Nationality",
@@ -180,7 +176,7 @@ def render_review_fixed_column_value_mapping_widget(corrected_column_mappings, c
 
 def render_submit_fixed_column_value_mapping_button():
   if st.button("Submit Column Value Mappings"):
-    st.session_state.submit_column_value_mapping = True
+    st.session_state.app_state = AppState.display_column_default_value_selector
 
 # This method renders the component to allow users to choose the default value for mandatory columns that have not been mapped
 def render_choose_default_value_for_required_columns_widget():
@@ -197,9 +193,7 @@ def render_choose_default_value_for_required_columns_widget():
 
 def render_confirm_unmapped_column_default_values_button():
   if st.button("Confirm Default Values"):
-    st.session_state.unmapped_columns_default_values_confirmed = True
-  if st.session_state.unmapped_columns_default_values_confirmed:
-    st.session_state.populate_import_sheet = True
+    st.session_state.app_state = AppState.display_download_import_sheet_button
 
 # This method renders the first few rows of the final import sheet after the data has been ported over
 def render_final_import_sheet(uploaded_file, rows_to_skip, country_specific_tlx_import_sheet_headers):
@@ -214,11 +208,12 @@ def render_download_import_sheet_button():
 def app(llm_model):
   st.title("Talenox's import sheet mapper")
   initialise_session_state_variables()
+  print(f"Start: {st.session_state.app_state}")
   # Step 1: Upload file
-  if st.session_state.app_state == AppState.display_file_uploader:
+  if st.session_state.app_state.value == AppState.display_file_uploader.value:
     render_upload_file_widget()
   # Step 2: Render country selector
-  if st.session_state.app_state == AppState.display_country_selector:
+  if st.session_state.app_state.value == AppState.display_country_selector.value:
     # Step 2.1: Check that the file has been read correctly
     st.session_state.rows_to_skip = render_sheet_skiprow_widget()
     st.session_state.sampled_df, st.session_state.raw_data_headers = extract_header_and_sample_data(st.session_state.uploaded_file, st.session_state.rows_to_skip)
@@ -228,31 +223,31 @@ def app(llm_model):
     country = render_select_country_widget()
     render_confirm_country_button(country)
   # Step 3: Generate column header mappings
-  if st.session_state.app_state == AppState.display_column_header_mapping:
+  if st.session_state.app_state.value == AppState.display_column_header_mapping.value:
     if st.session_state.previous_confirmed_country != st.session_state.confirmed_country:
       st.session_state.previous_confirmed_country = st.session_state.confirmed_country
       st.session_state['initial_mappings'] = None
-    country_specific_tlx_import_sheet_headers = get_column_headers(st.session_state.confirmed_country.lower().replace(" ", "_"))
-    initial_mappings = get_column_header_mappings(llm_model, st.session_state.raw_data_headers, st.session_state.user_sample_values, country_specific_tlx_import_sheet_headers)
-    # Step 6: Review proposed column header mappings by the LLM
-    corrected_column_mappings = render_review_column_header_mapping_widget(initial_mappings, country_specific_tlx_import_sheet_headers)
-    # Step 7: Submit confirmed header mappings
+    st.session_state.country_specific_tlx_import_sheet_headers = get_column_headers(st.session_state.confirmed_country.lower().replace(" ", "_"))
+    initial_mappings = get_column_header_mappings(llm_model, st.session_state.raw_data_headers, st.session_state.user_sample_values, st.session_state.country_specific_tlx_import_sheet_headers)
+    # Review proposed column header mappings by the LLM
+    corrected_column_mappings = render_review_column_header_mapping_widget(initial_mappings, st.session_state.country_specific_tlx_import_sheet_headers)
+    # Submit confirmed header mappings
     render_submit_column_header_mapping_button(corrected_column_mappings)
-  if st.session_state.app_state == AppState.display_column_value_mapping:
-    # Step 8: Generate and review value mapping based on column mappings
+  # Step 4: Generate and value mappings
+  if st.session_state.app_state.value == AppState.display_column_value_mapping.value:
     data = pd.read_excel(st.session_state.uploaded_file, skiprows=st.session_state.rows_to_skip)
     consolidated_accepted_column_values = get_tlx_column_dropdown_values(st.session_state.confirmed_country)
     generate_initial_fixed_column_value_mapping_widget(llm_model, consolidated_accepted_column_values, data)
     render_review_fixed_column_value_mapping_widget(st.session_state.corrected_column_mappings, consolidated_accepted_column_values, data)
     render_submit_fixed_column_value_mapping_button()
-  if st.session_state.app_state == AppState.display_column_default_value_selector:
-    # Step 9: Choose default values for mandatory columns
+  # Step 5: Choose default values for mandatory columns
+  if st.session_state.app_state.value == AppState.display_column_default_value_selector.value:
     render_choose_default_value_for_required_columns_widget()
     render_confirm_unmapped_column_default_values_button()
-  if st.session_state.app_state == AppState.display_download_import_sheet_button:
-    render_final_import_sheet(st.session_state.uploaded_file, st.session_state.rows_to_skip, country_specific_tlx_import_sheet_headers)
+  if st.session_state.app_state.value == AppState.display_download_import_sheet_button.value:
+    render_final_import_sheet(st.session_state.uploaded_file, st.session_state.rows_to_skip, st.session_state.country_specific_tlx_import_sheet_headers)
     render_download_import_sheet_button()
-          
+  print(f"End: {st.session_state.app_state}")
 if __name__ == "__main__":
   # st.session_state.clear()
   try:
