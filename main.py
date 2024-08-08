@@ -27,6 +27,8 @@ def initialise_session_state_variables():
     st.session_state.app_state = AppState.display_file_uploader
   if 'uploaded_file' not in st.session_state:
     st.session_state.uploaded_file = None
+  if 'uploaded_tlx_file' not in st.session_state:
+    st.session_state.uploaded_tlx_file = None
   if 'confirmed_country' not in st.session_state:
     st.session_state.confirmed_country = None
   if 'corrected_column_mappings' not in st.session_state:
@@ -46,8 +48,10 @@ def initialise_session_state_variables():
 def render_upload_file_widget():
   st.subheader("Choose a file")
   uploaded_file = st.file_uploader("Upload the file containing your data.", type=["xlsx", "xls"])
-  if uploaded_file is not None:
+  uploaded_tlx_file = st.file_uploader("Upload the Talenox import sheet to fill up.", type=["xlsx", "xls"])
+  if uploaded_file is not None and uploaded_tlx_file is not None:
     st.session_state.uploaded_file = uploaded_file
+    st.session_state.uploaded_tlx_file = uploaded_tlx_file
     st.session_state.app_state = AppState.display_country_selector
 
 # This method renders the section to allow users to set the header row of the sheet uploaded
