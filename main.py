@@ -86,31 +86,35 @@ def get_column_header_mappings(llm_model, raw_data_headers, user_sample_values, 
   country_specific_sample_values = get_sample_values(st.session_state.confirmed_country.lower().replace(" ", "_"))
   # Only hit the LLM if the session state does not already contain the mappings. When user changes country, initial_mappings will be reset, triggering the if block below
   if st.session_state.initial_mappings is None:
-    # initial_mappings = generate_column_header_mappings(llm_model, raw_data_headers, user_sample_values, st.session_state['column_header_name_normalised_mapping'].values(), country_specific_sample_values)
-    initial_mappings = '''{
-      "EmployeeCode": "Employee ID",
-      "LastName": "Last Name*",
-      "FirstName": "First Name*",
-      "Gender": "Gender",
-      "Title": "Job Title",
-      "NationalityCode": "Nationality",
-      "BirthDate": "Hired Date (DD/MM/YYYY)*",
-      "RaceCode": "Race",
-      "ReligionCode": "Religion",
-      "MaritalStatus": "Marital Status",
-      "Email": "Email",
-      "BankAccountNo": "Bank Account No.",
-      "BankBranch": "Bank Code",
-      "BankCurrencyCode": {
-        "column": "Currency of Salary",
-        "explanation": "Based on the context of mapping currency"
-      },
-      "SFC01": "Nickname"
-    }
-    '''
-    initial_mappings_cleaned = initial_mappings.replace('\n', '')
-    initial_mappings_json = json.loads(initial_mappings_cleaned)
-    st.session_state['initial_mappings'] = initial_mappings_json
+    try:
+      initial_mappings = generate_column_header_mappings(llm_model, raw_data_headers, user_sample_values, st.session_state['column_header_name_normalised_mapping'].values(), country_specific_sample_values)
+      # initial_mappings = '''{
+      #   "EmployeeCode": "Employee ID",
+      #   "LastName": "Last Name*",
+      #   "FirstName": "First Name*",
+      #   "Gender": "Gender",
+      #   "Title": "Job Title",
+      #   "NationalityCode": "Nationality",
+      #   "BirthDate": "Hired Date (DD/MM/YYYY)*",
+      #   "RaceCode": "Race",
+      #   "ReligionCode": "Religion",
+      #   "MaritalStatus": "Marital Status",
+      #   "Email": "Email",
+      #   "BankAccountNo": "Bank Account No.",
+      #   "BankBranch": "Bank Code",
+      #   "BankCurrencyCode": {
+      #     "column": "Currency of Salary",
+      #     "explanation": "Based on the context of mapping currency"
+      #   },
+      #   "SFC01": "Nickname"
+      # }
+      # '''
+      initial_mappings_cleaned = initial_mappings.replace('\n', '')
+      initial_mappings_json = json.loads(initial_mappings_cleaned)
+      st.session_state['initial_mappings'] = initial_mappings_json
+    except json.JSONDecodeError as e:
+      st.session_state['initial_mappings'] = None
+      st.rerun()
   else:
     initial_mappings_json = st.session_state['initial_mappings']
   return initial_mappings_json
