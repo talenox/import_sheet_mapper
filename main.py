@@ -153,7 +153,7 @@ def get_column_mapping_duplicates():
 def generate_initial_fixed_column_value_mapping_widget(llm_model, consolidated_accepted_column_values, data):
   for user_column, tlx_column in st.session_state.corrected_column_mappings.items():
     normalised_column_name = normalise_column_name(tlx_column)
-    if normalised_column_name in consolidated_accepted_column_values and st.session_state['consolidated_corrected_value_mappings'][normalised_column_name] is None:
+    if normalised_column_name in consolidated_accepted_column_values and normalised_column_name not in st.session_state['consolidated_corrected_value_mappings']:
       accepted_column_values = consolidated_accepted_column_values[normalised_column_name]
       initial_value_mappings = generate_fixed_value_column_mappings(
         llm_model,
