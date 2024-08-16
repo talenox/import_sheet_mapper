@@ -39,11 +39,12 @@ def write_to_preformatted_excel(data, country):
     wb = load_workbook(uploaded_file)
     headers = extract_headers_from_excel_file(uploaded_file, 2, sheet_name=0)  # Assuming 2 is the header row and 0 is the sheet index
     ws = wb.active
-    # Reorder columns in DataFrame to match headers in Excel
-    missing_headers = [header for header in headers if header not in data.columns]
-    if missing_headers:
-      raise ValueError(f"The following headers are missing in the DataFrame: {missing_headers}")
-    data = data[headers]
+    # Reorder columns in DataFrame to match headers in Excel up to the last match
+    matched_headers = [header for header in headers if header in data.columns]
+    # If there are missing headers, match up to the last one found
+    if matched_headers:
+      data = data[matched_headers + [col for col in data.columns if col not in matched_headers]]
+
     # Write DataFrame to the Excel sheet starting from the next empty row
     for row in dataframe_to_rows(data, index=False, header=False):
       ws.append(row)

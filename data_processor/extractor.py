@@ -28,6 +28,7 @@ def extract_unique_sample_values(uploaded_file, rows_to_skip, sheet_name=0):
       sampled_data[col] = unique_values
 
   # Convert dictionary to JSON string with 2-space indentation
+  sample_data = {}
   try:
     sample_data = json.dumps(sampled_data, ensure_ascii=False, indent=2, default=datetime_serializer)
   except TypeError as e:

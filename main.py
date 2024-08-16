@@ -56,7 +56,7 @@ def render_upload_file_widget():
 
 # This method renders the section to allow users to set the header row of the sheet uploaded
 def render_sheet_skiprow_widget():
-    rows_to_skip = st.number_input("Enter the number of rows to skip. For example, if your data starts on the 3rd row, then input 2.", min_value=1, value=1)
+    rows_to_skip = st.number_input("Enter the number of rows to skip. For example, if your data starts on the 3rd row, then input 2.", min_value=0, value=0)
     return rows_to_skip
 
 # This method displays the first 5 rows of the uploaded sheet
