@@ -324,10 +324,10 @@ if __name__ == "__main__":
   # st.session_state.clear()
   try:
     # Initialize the OpenAI client
-    llm_model = OpenAi()
+    # llm_model = OpenAi()
     
     # Initialize the Gemini client
-    # llm_model = Gemini()
+    llm_model = Gemini()
     app(llm_model)
   except Exception as e:
     # Catch any exception and handle it
