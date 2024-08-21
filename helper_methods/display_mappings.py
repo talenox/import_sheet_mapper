@@ -136,11 +136,12 @@ def display_initial_column_mappings(initial_mappings_json, session_key):
 def create_input_and_selectbox(fixed_values, header, mapped_value, index, key, suggestion=False, explanation=""):
   col1, col2 = st.columns([3, 3])
   with col1:
-    user_input = st.text_input("Label", header, disabled=True, key=f"col_1_{header}_{mapped_value}_{key}_{uuid.uuid4()}", label_visibility="hidden")
+    user_input = st.text_input("Label", header, disabled=True, key=f"col_1_{header}_{mapped_value}_{key}_{index}", label_visibility="hidden")
   with col2:
-    corrected = st.selectbox("Label", fixed_values, index=index, key=f"col_2_{header}_{mapped_value}_{key}_{uuid.uuid4()}", label_visibility="hidden")
+    corrected = st.selectbox("Label", fixed_values, index=index, key=f"col_2_{header}_{mapped_value}_{key}", label_visibility="hidden")
   if suggestion:
     st.text(f"{explanation}")
+  
   return user_input, corrected
 
 # This method displays the final mappings done by the LLM and corrected by the user on the UI
