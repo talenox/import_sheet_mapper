@@ -232,7 +232,7 @@ def render_back_button():
     st.rerun()
   
 def app(llm_model):
-  st.title("Talenox's import sheet mapper")
+  st.title("Talenox's Onboarding Data Import Tool")
   initialise_session_state_variables()
 
   # Create placeholders for dynamic content
