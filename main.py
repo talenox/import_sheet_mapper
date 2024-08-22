@@ -157,7 +157,7 @@ def generate_initial_fixed_column_value_mapping_widget(llm_model, consolidated_a
       accepted_column_values = consolidated_accepted_column_values[normalised_column_name]
       initial_value_mappings = generate_fixed_value_column_mappings(
         llm_model,
-        data[user_column].unique().tolist(),
+        data[user_column].dropna().unique().tolist(),
         accepted_column_values
       )
       st.session_state['consolidated_corrected_value_mappings'][normalised_column_name] = initial_value_mappings
@@ -180,7 +180,7 @@ def render_review_fixed_column_value_mapping_widget(corrected_column_mappings, c
         f"{tlx_column}_corrected_value_mappings"
       )
       # Update the session state with the corrected mappings
-      st.session_state['consolidated_corrected_value_mappings'][tlx_column] = corrected_value_mappings
+      st.session_state['consolidated_corrected_value_mappings'][normalised_column_name] = corrected_value_mappings
 
 def render_submit_fixed_column_value_mapping_button():
   if st.button("Submit Column Value Mappings"):
@@ -195,7 +195,7 @@ def render_choose_default_value_for_required_columns_widget():
   unmapped_mandatory_columns = [normalise_column_name(column) for column in mandatory_columns_normalized if column not in mapped_columns_normalized]
   # pull the column dropdown values that are available
   column_dropdown_values = get_tlx_column_dropdown_values(st.session_state.confirmed_country)
-  filtered_json = { key: column_dropdown_values[key] for key in unmapped_mandatory_columns if key in column_dropdown_values.keys() }
+  filtered_json = { key: [""] + column_dropdown_values[key] for key in unmapped_mandatory_columns if key in column_dropdown_values.keys() }
   # for each of them, choose a default value from column_dropdown_values.json or shared_columndropdown_values.json 
   display_default_value_mappings(filtered_json, "unmapped_columns_default_value")
 
