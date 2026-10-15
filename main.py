@@ -1,11 +1,10 @@
-from openai import OpenAI
 from dotenv import load_dotenv
 import json
 import streamlit as st
 import warnings
 from collections import Counter
 from llm_models.openai import OpenAi
-from llm_models.gemini import Gemini
+from llm_models.deepseek import DeepSeek
 from data_processor.extractor import *
 from data_generator.tlx_column_header_mapper import *
 from helper_methods.mapper import *
@@ -326,8 +325,8 @@ if __name__ == "__main__":
     # Initialize the OpenAI client
     # llm_model = OpenAi()
     
-    # Initialize the Gemini client
-    llm_model = Gemini()
+    # Initialize the DeepSeek client
+    llm_model = DeepSeek()
     app(llm_model)
   except Exception as e:
     # Catch any exception and handle it
